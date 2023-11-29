@@ -132,17 +132,16 @@
 # By default we assume that the server is physical
 - name: "Setfact for virtual"
   set_fact:
-    virtual: False
+    isvirt: False
 
-- name: "Setfact false when device_manufacturer is a hypervisor"
+- name: "Setfact True when device_manufacturer is a hypervisor"
   set_fact:
-    virtual: True
+    isvirt: True
   when: device_manufacturer == "VMware" or device_manufacturer == "QEMU"
 
 - name: "Debug virtual"
   debug:
-    msg: "virtual: {{ virtual }}"
-  failed_when: True
+    msg: "isvirt: {{ isvirt }}"
   tags: netbox
 
 - name: "Create region"
@@ -503,25 +502,38 @@
 - name: "get devices when not virtual"
   delegate_to: localhost
   uri:
-    url: "{{ netbox_url }}/{{ path }}/?name={{ ansible_hostname }}"
+    url: "{{ netbox_url }}/api/dcim/devices/?name={{ ansible_hostname }}"
     method: GET
     headers: "{{ netbox_headers }}"
     body_format: json
     status_code: 200
   register: netbox_devices
-  when: virtual is false
+  when: isvirt is false
   tags: netbox
 
-- name: "get virtual  servers when virtual"
+- name: "get virtual servers"
   delegate_to: localhost
   uri:
-    url: "{{ netbox_url }}/{{ path }}/?name={{ ansible_hostname }}"
+    url: "{{ netbox_url }}/api/virtualization/virtual-machines/?name={{ ansible_hostname }}"
     method: GET
     headers: "{{ netbox_headers }}"
     body_format: json
     status_code: 200
   register: netbox_servers
   tags: netbox
+  when: isvirt is true
+
+- name: "Get site data from netbox"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/sites/?name={{ site }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_site
+  tags: netbox
+  when: isvirt is false
 
 - name: "Setfact for ansible real cores"
   set_fact:
@@ -551,7 +563,7 @@
 - name: "Create a device in netbox"
   delegate_to: localhost
   uri:
-    url: "{{ netbox_url }}/{{ path }}/"
+    url: "{{ netbox_url }}/api/dcim/devices/"
     method: POST
     headers: "{{ netbox_headers }}"
     body_format: json
@@ -572,36 +584,44 @@
     status_code: 201
   register: netbox_device_create
   failed_when: false
-  when: virtual is false
+  when: isvirt is false
   tags: netbox
 
 - name: "We need to get data from netbox prior to creating a virtual server"
   set_fact:
     netbox_create: False
-  when: virtual is true
+  when: isvirt is true
   tags: netbox
 
-- name: "Get netbox data"
+- name: "Get netbox data for virtual server"
   delegate_to: localhost
   uri:
-    url: "{{ netbox_url }}/{{ path }}/?name={{ ansible_hostname }}"
+    url: "{{ netbox_url }}/api/virtualization/virtual-machines/?name={{ inventory_hostname }}"
     method: GET
     headers: "{{ netbox_headers }}"
     body_format: json
     status_code: 200
   register: netbox_data
   tags: netbox
+  when: isvirt is true
 
-- name: "If thet count is zero create vm" 
-  set_fact:
-    netbox_create: True
-  when: netbox_data.json.count == 0 and virtual is true
+- name: "Get netbox data for device"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/devices/?name={{ inventory_hostname }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_data
   tags: netbox
+  when: isvirt is false
+
 
 - name: "Create a virtual server in netbox"
   delegate_to: localhost
   uri:
-    url: "{{ netbox_url }}/{{ path }}/"
+    url: "{{ netbox_url }}/api/virtualization/virtual-machines/"
     method: POST
     headers: "{{ netbox_headers }}"
     body_format: json
@@ -617,18 +637,42 @@
         ]
       }
     status_code: 201
-  when: netbox_create is true and virtual is true
+  when: isvirt is true
+  failed_when: false
   tags: netbox
 
 - name: "Get netbox data"
   delegate_to: localhost
   uri:
-    url: "{{ netbox_url }}/{{ path }}/?name={{ ansible_hostname }}"
+    url: "{{ netbox_url }}/api/virtualization/virtual-machine/?name={{ inventory_hostname }}"
     method: GET
     headers: "{{ netbox_headers }}"
     body_format: json
     status_code: 200
   register: netbox_data
+  tags: netbox
+  when: isvirt is true
+
+- name: "Get netbox data from device"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/devices/?name={{ inventory_hostname }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_data
+  tags: netbox
+  when: isvirt is false
+
+- name: "Debug netbox_data"
+  debug:
+    msg: "netbox_data: {{ netbox_data }}"
+  tags: netbox
+
+- name: "Debug inventory_hostname"
+  debug:
+    msg: "inventory_hostname: {{ inventory_hostname }}"
   tags: netbox
 
 
@@ -636,16 +680,30 @@
   set_fact:
     netbox_id: "{{ netbox_servers.json.results[0].id }}"
 
-- name: "get servers data "
+- name: "get servers data from virtualization"
   delegate_to: localhost
   uri:
-    url: "{{ netbox_url }}/{{ path }}/{{ netbox_id }}"
+    url: "{{ netbox_url }}/api/virtualization/virtual-machine/{{ netbox_id }}"
     method: GET
     headers: "{{ netbox_headers }}"
     body_format: json
     status_code: 200
   register: netbox_data
   tags: netbox
+  when: isvirt is true
+
+- name: "Get servers data from dcim"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/devices/{{ netbox_id }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_data
+  tags: netbox
+  when: isvirt is false
+
 
 - name: "Set fact update netbox virtual server"
   set_fact:
@@ -659,26 +717,26 @@
 - name: "set fact for nebox vcpus"
   set_fact:
     netbox_vcpus: 0
-  when: virtual is false
+  when: isvirt is false
   tags: netbox
 
 - name: "set fact for netbox memory"
   set_fact:
     netbox_memory: 0
-  when: virtual is false
+  when: isvirt is false
   tags: netbox
 
 
 - name: "set fact for netbox vcpus"
   set_fact:
     netbox_vcpus: netbox_data.json.vcpus
-  when: virtual is true
+  when: isvirt is true
   tags: netbox
 
 - name: "set fact for netbox memory"
   set_fact:
     netbox_memory: netbox_data.json.memory
-  when: virtual is true
+  when: isvirt is true
   tags: netbox
 
 
@@ -686,19 +744,45 @@
   set_fact:
     netbox_virtual_server_update: True
   failed_when: False
-  when: real_mem != netbox_memory and virtual is true
+  when: real_mem != netbox_memory and isvirt is true
   tags: netbox
 
 - name: "Check if vcpus is not equal to netbox_data.json.vcpus"
   set_fact:
     netbox_virtual_server_update: True
-  when: vcpus != netbox_vcpus and virtual is true
+  when: vcpus != netbox_vcpus and isvirt is true
   tags: netbox
+
+  # we need a device type for the virtual server
+- name: "set fact for device type name"
+  set_fact:
+    device_type_name: "{{ lshw.product | split(' (') | first | replace(' ','-') }}"
+  when: lshw.product is defined
+
+  # get the device type id
+- name: "get device type id"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/device-types/?model={{ device_type_name }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_device_type
+  tags: netbox
+
+- name: "Debug device_type_name"
+  debug:
+    msg: "device_type_name: {{ device_type_name }}"
+  tags: netbox
+
+
+
 
 - name: "Update netbox virtual server"
   delegate_to: localhost
   uri:
-    url: "{{ netbox_url }}/{{ path }}/{{ netbox_id }}/"
+    url: "{{ netbox_url }}/virtualization/virtual-machines/{{ netbox_id }}/"
     method: PUT
     headers: "{{ netbox_headers }}"
     body_format: json
@@ -710,7 +794,7 @@
         
       }
     status_code: 200
-  when: netbox_virtual_server_update is true and virtual is true
+  when: netbox_virtual_server_update is true and isvirt is true
   tags: netbox
 
 - name: "Get physical server data"
@@ -722,7 +806,7 @@
     body_format: json
     status_code: 200
   register: netbox_data
-  when: virtual is false
+  when: isvirt is false
   tags: netbox
 
 - name: "Debug netbox_data"
@@ -740,14 +824,14 @@
     body_format: json
     status_code: 200
   register: netbox_inventory_items
-  when: virtual is false
+  when: isvirt is false
   failed_when: false
   tags: netbox
 
 - name: "Debug inventory items"
   debug:
     msg: "netbox_inventory_items: {{ netbox_inventory_items }}"
-  when: virtual is false
+  when: isvirt is false
   tags: netbox
 
 # Setfact for ansible processor type
@@ -924,12 +1008,6 @@
     netbox_cpumanufacturer_id: "{{ netbox_cpumanufacturers.json.results[0].id }}"
   tags: netbox
 
-- name: "Debug virtual"
-  debug:
-    msg: "virtual: {{ virtual }}"
-  failed_when: True
-  tags: netbox
-
 - name: "Create n number of inventory items for the device in netbox called cpuN"
   delegate_to: localhost
   uri:
@@ -953,7 +1031,7 @@
   register: netbox_inventory_items_create
   failed_when: False
   with_items: "{{ socketloop }}"
-  when: virtual is false
+  when: isvirt is false
 
 
   # end of cpu loop
