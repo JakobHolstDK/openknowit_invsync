@@ -1,0 +1,12 @@
+#!/usr/bin/expect
+
+spawn  sudo /tmp/tlinstall/tl-4.15.0-server/install-server
+expect "Press Enter to continue..."
+send "\r"
+expect "Press Enter to continue..."
+send "\r"
+expect "Press Enter to continue..."
+send "\r"
+expect "?"
+send "no\r"
+expect eof

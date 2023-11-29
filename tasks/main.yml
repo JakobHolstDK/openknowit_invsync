@@ -1,0 +1,1207 @@
+---
+# we need to know if the server is virutal or not
+- name: "ensure that lshw is installed"
+  package:
+    name: lshw
+    state: present
+  become: true
+
+- name: "Run lshw -json"
+  shell: "lshw -json"
+  register: lshw_json
+  changed_when: false
+  become: true
+
+- name: "Set fact for ansible_facts for lshw command and save it in a fact"
+  set_fact:
+    lshw: "{{ lshw_json.stdout | from_json }}"
+  become: true
+
+# VMware, Inc. is a manufacturer of virtual servers but we need to rename it to VMware
+- name: "Set fact for manufacturer"
+  set_fact:
+    device_manufacturer: "{{ lshw.vendor | regex_replace('VMware, Inc.', 'VMware') }}"
+  become: true
+
+# Create the manufacturer in netbox if it is missing
+- name: "Create the manufacturer in netbox"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/manufacturers/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ lshw.vendor }}",
+        "slug": "{{ lshw.vendor | lower }}",
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_manufacturer_create
+  failed_when: False
+  when: lshw.vendor is defined and prepare_netbox == True
+  tags: netbox
+
+# Retrieve the manufacturer from netbox
+- name: "get data from netbox for manufacturer"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/manufacturers/?name={{ device_manufacturer }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_manufacturer
+  tags: netbox
+
+# Do we have a device type called what lshw.product says
+- name: "check if we have a device type called lshw.product"
+  set_fact:
+    device_type: "{{ lshw.product }}"
+  when: lshw.product is defined
+  become: true
+
+# Get the id of the manufacturer
+- name: "Get the device manufactorer id"
+  set_fact:
+    netbox_manufacturer_id: "{{ netbox_manufacturer.json.results[0].id }}"
+  when: netbox_manufacturer.json.count > 0
+
+- name: " set fact for device type name"
+  set_fact:
+    device_type_name: "{{ lshw.product | split(' (') | first | replace(' ','-') }}"
+  when: lshw.product is defined
+
+- name: "Debug device type name"
+  debug:
+    msg: "device_type_name: {{ device_type_name }}"
+  tags: netbox
+
+- name: "Create the device type in nebox if defined"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/device-types/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ device_type_name  }}",
+        "slug": "{{ device_type_name | lower }}",
+        "manufacturer": "{{ netbox_manufacturer_id }}",
+        "model": "{{ device_type_name }}",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_device_type_create
+  when: prepare_netbox == True
+  failed_when: False 
+  tags: netbox
+
+- name: "Check if the device type exist"
+  delegate_to: localhost  
+  uri:
+    url: "{{ netbox_url }}/api/dcim/device-types/?model={{ device_type_name }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  failed_when: False
+  register: netbox_device_type
+  tags: netbox
+- name: "Debug device_manufacturer"
+  debug:
+    msg: "device_manufacturer: {{ device_manufacturer }}"
+  tags: netbox
+
+- name: "Debug physhvendors"
+  debug:
+    msg: "physhwvendors: {{ physhwvendors }}"
+  tags: netbox
+- name: "Debug virtualmanufacturers"
+  debug:
+    msg: "virtualmanufacturers: {{ virtualmanufacturers }}"
+  tags: netbox
+
+# By default we assume that the server is physical
+- name: "Setfact for virtual"
+  set_fact:
+    virtual: False
+
+- name: "Setfact false when device_manufacturer is a hypervisor"
+  set_fact:
+    virtual: True
+  when: device_manufacturer == "VMware" or device_manufacturer == "QEMU"
+
+- name: "Debug virtual"
+  debug:
+    msg: "virtual: {{ virtual }}"
+  failed_when: True
+  tags: netbox
+
+- name: "Create region"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/regions/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ region }}",
+        "slug": "{{ region }}",
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_region_create
+  failed_when: False
+  when: prepare_netbox == True
+  tags: netbox
+
+- name: "get data from netbox for region"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/regions/?name={{ region }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_region
+  tags: netbox
+
+- name: "Create device role"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/device-roles/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ device_role }}",
+        "slug": "{{ device_role }}",
+        "color": "ffffff",
+        "vm_role": false,
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_device_role_create
+  failed_when: False
+  when: prepare_netbox == True
+
+- name: "Netbox prepare | check if device_role exists" 
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/device-roles/?name={{ device_role }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_device_role
+  tags: netbox
+
+- name: "Create the platform if it is missing"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/platforms/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ device_platform }}",
+        "slug": "{{ device_platform }}",
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_device_platform_create
+  failed_when: False
+  when: prepare_netbox == True
+  tags: netbox
+
+- name: "Netbox prepare | check if device_platform exists"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/platforms/?name={{ device_platform }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_device_platform
+  tags: netbox
+
+- name: "Netbox prepare | Create tenant group if it is missing"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/tenancy/tenant-groups/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ tenant_group }}",
+        "slug": "{{ tenant_group }}",
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 
+    - 201
+    - 400
+    - 401
+  register: netbox_tenant_group_create
+  failed_when:  netbox_tenant_group_create.json.name[0] != 'tenant group with this name already exists.' 
+  when: prepare_netbox == True
+  tags: netbox
+
+- name: "Netbox prepart | check if tenant group exists"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/tenancy/tenant-groups/?name={{ tenant_group }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_tenant_group
+  tags: netbox
+
+- name: "Netbox prepare | set fact for tenant group id"
+  set_fact:
+    netbox_tenant_group_id: "{{ netbox_tenant_group.json.results[0].id }}"
+  when: netbox_tenant_group.json.count > 0
+
+- name: "Netbox prepare | Create tenant if it is missing"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/tenancy/tenants/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ tenant }}",
+        "slug": "{{ tenant }}",
+        "group": "{{ netbox_tenant_group_id }}",
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_tenant_create
+  failed_when: False
+  when: prepare_netbox == True
+  tags: netbox
+
+- name: "Netbox prepare | check if tenant exists"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/tenancy/tenants/?name={{ tenant }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_tenant
+  tags: netbox
+
+- name: "create site "
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/sites/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ site }}",
+        "slug": "{{ site }}",
+        "status": "active",
+        "region": "{{ netbox_region.json.results[0].id }}",
+        "tenant": "{{ netbox_tenant.json.results[0].id }}",
+        "time_zone": "Europe/Copenhagen",
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_site_create
+  failed_when: False
+  when: prepare_netbox == True
+
+
+- name: "Netbox prepare | check if site exists"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/sites/?name={{ site }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_site
+  tags: netbox
+
+- name: "Netbox prepare | check if rack exists" 
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/racks/?name={{ rack }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_rack
+  tags: netbox
+
+- name: "Netbox prepare | create device role"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/device-roles/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ device_role }}",
+        "slug": "{{ device_role }}",
+        "color": "ffffff",
+        "vm_role": false,
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_device_role_create
+  failed_when: False
+  when: prepare_netbox == True
+  tags: netbox
+
+- name: "Netbox prepare | check if device_role exists"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/device-roles/?name={{ device_role }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_device_role
+  tags: netbox
+
+- name: "Netbox prepare | Create cluster group"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/virtualization/cluster-groups/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ cluster_group }}",
+        "slug": "{{ cluster_group }}",
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_cluster_group_create
+  failed_when: netbox_cluster_group_create.json.name[0] != 'cluster group with this name already exists.'
+  when: prepare_netbox == True
+  tags: netbox
+
+- name: "Netbox prepart | check if cluster group exists"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/virtualization/cluster-groups/?name={{ cluster_group }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_cluster_group
+  tags: netbox
+
+- name: "Netbox prepare | set fact for cluster group id"
+  set_fact:
+    netbox_cluster_group_id: "{{ netbox_cluster_group.json.results[0].id }}"
+  when: netbox_cluster_group.json.count > 0
+
+- name: "Netbox prepart | check if cluster exists"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/virtualization/clusters/?name={{ cluster }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_cluster
+  tags: netbox
+
+- name: "Netbox prepart | check if region exists"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/regions/?name={{ region }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_region
+  tags: netbox
+
+- name: "Netbox prepart | check if tenant exists"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/tenancy/tenants/?name={{ tenant }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_tenant
+  tags: netbox
+
+- name: "Netbox prepare | check if the region exist"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/regions/?name={{ region }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_region
+  tags: netbox
+
+- name: "Netbox prepare | check if the facility éxits"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/sites/?name={{ facility }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_facility
+  tags: netbox
+
+- name: "Setfact for ansible processor type"
+  set_fact:
+    processor_type: "{{ ansible_facts.processor[2].strip('&').strip('@') }}"
+
+- name: "get devices when not virtual"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ path }}/?name={{ ansible_hostname }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_devices
+  when: virtual is false
+  tags: netbox
+
+- name: "get virtual  servers when virtual"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ path }}/?name={{ ansible_hostname }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_servers
+  tags: netbox
+
+- name: "Setfact for ansible real cores"
+  set_fact:
+    real_cores: "{{ ansible_facts.processor_cores }}"
+
+- name: "Setfact for ansible processor_count"
+  set_fact:
+    real_processor_count: "{{ ansible_facts.processor_count }}"
+
+- name: "Setfact for ansible processors"
+  set_fact:
+    real_processors:  "{{ real_cores | int  * real_processor_count | int  }}"
+
+- name: "Setfact for ansible real memory"
+  set_fact:
+    real_mem: "{{ ansible_facts.memtotal_mb }}"
+
+- name: "Setfact for ansible vcpus"
+  set_fact:
+    vcpus: "{{ ansible_facts.processor_vcpus }}"
+
+- name: "set the fact that we do not need to create a device"
+  set_fact:
+    netbox_create: False
+  tags: netbox
+
+- name: "Create a device in netbox"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ path }}/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ ansible_hostname }}",
+        "device_type": "{{ netbox_device_type.json.results[0].id }}",
+        "role": " {{ netbox_device_role.json.results[0].id }}",
+        "platform": "{{ netbox_device_platform.json.results[0].id }}",
+        "serial": "{{ lshw.children[0].serial }}",
+        "asset_tag": "{{ lshw.children[0].serial }}",
+        "site": "{{ netbox_site.json.results[0].id }}",
+        "status": "active",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_device_create
+  failed_when: false
+  when: virtual is false
+  tags: netbox
+
+- name: "We need to get data from netbox prior to creating a virtual server"
+  set_fact:
+    netbox_create: False
+  when: virtual is true
+  tags: netbox
+
+- name: "Get netbox data"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ path }}/?name={{ ansible_hostname }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_data
+  tags: netbox
+
+- name: "If thet count is zero create vm" 
+  set_fact:
+    netbox_create: True
+  when: netbox_data.json.count == 0 and virtual is true
+  tags: netbox
+
+- name: "Create a virtual server in netbox"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ path }}/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ ansible_hostname }}",
+        "vcpus": "{{ real_processor_count }}",
+        "memory": "{{ real_mem }}",
+        "site": "{{ netbox_site.json.results[0].id }}",
+        "status": "active",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  when: netbox_create is true and virtual is true
+  tags: netbox
+
+- name: "Get netbox data"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ path }}/?name={{ ansible_hostname }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_data
+  tags: netbox
+
+
+- name: "Locate my ansible hostname in netbox_virtual_servers"
+  set_fact:
+    netbox_id: "{{ netbox_servers.json.results[0].id }}"
+
+- name: "get servers data "
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ path }}/{{ netbox_id }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_data
+  tags: netbox
+
+- name: "Set fact update netbox virtual server"
+  set_fact:
+    netbox_virtual_server_update: False
+
+- name: "Debug"
+  debug:
+    msg: "netbox_data.json.memory: {{ netbox_data.json }}"
+  tags: netbox
+
+- name: "set fact for nebox vcpus"
+  set_fact:
+    netbox_vcpus: 0
+  when: virtual is false
+  tags: netbox
+
+- name: "set fact for netbox memory"
+  set_fact:
+    netbox_memory: 0
+  when: virtual is false
+  tags: netbox
+
+
+- name: "set fact for netbox vcpus"
+  set_fact:
+    netbox_vcpus: netbox_data.json.vcpus
+  when: virtual is true
+  tags: netbox
+
+- name: "set fact for netbox memory"
+  set_fact:
+    netbox_memory: netbox_data.json.memory
+  when: virtual is true
+  tags: netbox
+
+
+- name: "Check if real_mem is not equal to netbox_data.json.memory"
+  set_fact:
+    netbox_virtual_server_update: True
+  failed_when: False
+  when: real_mem != netbox_memory and virtual is true
+  tags: netbox
+
+- name: "Check if vcpus is not equal to netbox_data.json.vcpus"
+  set_fact:
+    netbox_virtual_server_update: True
+  when: vcpus != netbox_vcpus and virtual is true
+  tags: netbox
+
+- name: "Update netbox virtual server"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ path }}/{{ netbox_id }}/"
+    method: PUT
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ ansible_hostname }}",
+        "memory": "{{ real_mem }}",
+        "vcpus": "{{ real_processor_count }}"
+        
+      }
+    status_code: 200
+  when: netbox_virtual_server_update is true and virtual is true
+  tags: netbox
+
+- name: "Get physical server data"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ path }}/?name={{ ansible_hostname }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_data
+  when: virtual is false
+  tags: netbox
+
+- name: "Debug netbox_data"
+  debug:
+    msg: "netbox_data: {{ netbox_data }}"
+  tags: netbox  
+
+
+- name: "get inventory items from netbox"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ invpath }}/?name={{ ansible_hostname }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_inventory_items
+  when: virtual is false
+  failed_when: false
+  tags: netbox
+
+- name: "Debug inventory items"
+  debug:
+    msg: "netbox_inventory_items: {{ netbox_inventory_items }}"
+  when: virtual is false
+  tags: netbox
+
+# Setfact for ansible processor type
+- name: "set fact for ansible processor type"
+  set_fact:
+    processor_type: "{{ ansible_facts.processor[2].strip('&').strip('@') }}"  
+  tags: netbox
+
+- name: "Debug lshw"  
+  debug:
+    msg: "lshw: {{ lshw }}"
+  tags: netbox
+
+
+# We need to know the amount of cpu sockets on the server
+# The information is stored in lswh as string "businfo" : "cpu@x",
+# We need to locate all the cpu@x and uniq them
+- name: "set fact for lshw businfo"
+  set_fact:
+    lshwchildren: "{{ lshw.children[0].children | list  | map(attribute='id') | list | unique }}"
+  tags: netbox
+
+- name: "Run lscpu and grep for 'Socket(s):'"
+  command: "lscpu"
+  register: lscpu
+  changed_when: false
+  become: true
+
+- name: "Debug lscpu"
+  debug:
+    msg: "lscpu: {{ lscpu }}"
+  tags: netbox
+
+- name: Extract Number of Sockets
+  set_fact:
+    socketsdict: "{{ lscpu.stdout | regex_search('Socket\\(s\\):\\s*(\\d+)', '\\1') }}"
+  tags: netbox
+
+- name: "set fact sockets"
+  set_fact:
+    sockets: "{{ socketsdict[0] | int }}"
+  tags: netbox
+
+- name: " set fact for Core(s) per socket:"
+  set_fact:
+    coresdict: "{{ lscpu.stdout | regex_search('Core\\(s\\) per socket:\\s*(\\d+)', '\\1') }}"
+  tags: netbox
+
+- name: "set fact for cores"
+  set_fact:
+    cores: "{{ coresdict[0] | int }}"
+  tags: netbox
+
+- name: "set fact for threats"
+  set_fact:
+    threadsdict: "{{ lscpu.stdout | regex_search('Thread\\(s\\) per core:\\s*(\\d+)', '\\1') }}"
+  tags: netbox
+
+- name: "set fact for threads"
+  set_fact:
+    threads: "{{ threadsdict[0] | int }}"
+  tags: netbox
+
+# we need to debug the processor type
+- name: "Debug processor type"
+  debug:
+    msg: "processor_type: {{ processor_type }}"
+  tags: netbox
+
+# We need to guess the manufacturer based on the processor type intel, amd, arm etc
+- name: "Guess the manufacturer based on the processor type"
+  set_fact:
+    cpumanufacturer: "{{ processor_type | regex_search('Intel|AMD|ARM') }}"
+  tags: netbox
+
+# We need to ensure that the manufacturer is in netbox
+- name: "ensure that the manufacturer is in netbox"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/manufacturers/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "{{ cpumanufacturer }}",
+        "slug": "{{ cpumanufacturer | lower }}",
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_manufacturer_create
+  failed_when: False  
+
+
+
+
+
+# we need to debug the processor sockets
+- name: "Debug processor sockets"
+  debug:
+    msg: "processor_sockets: {{ sockets }}"
+  tags: netbox
+
+# we need to debug the processor cores
+- name: "Debug processor cores"
+  debug:
+    msg: "processor_cores: {{ cores }}"
+  tags: netbox
+
+- name: "Debug processor threads"
+  debug:
+    msg: "processor_threads: {{ threads }}"
+  tags: netbox
+
+- name: "create a list based on socket with items cpu0, cpu1 ...."
+  set_fact:
+    sockets_list: "{{ range(0, sockets|int) | map('regex_replace', '^(.*)$', 'cpu\\1') | list }}"
+  tags: netbox
+
+- name: "Debug sockets_list"
+  debug:
+    msg: "sockets_list: {{ sockets_list }}"
+  tags: netbox
+
+- name: "Debug loop"
+  set_fact:
+    socketloop:  "{{ query('sequence', 'start=1 end='+(sockets)  | string) }}"
+  tags: netbox
+
+- name: " debug server serial number"
+  set_fact:
+    assettag: "{{ lshw.children[0].serial }}"
+  tags: netbox
+
+- name: "Get the netbox inventory item roles"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/inventory-item-roles/"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_inventory_item_roles
+  tags: netbox
+ 
+# we need a dict with the inventory item roles mapped to the name
+- name: "Set fact for inventory item roles"
+  set_fact:
+    inventoryitemroles: "{{ netbox_inventory_item_roles.json.results | items2dict(key_name='name', value_name='id') }}"
+  tags: netbox
+
+- name: "Debug inventory item roles"
+  debug:
+    msg: "inventoryitemroles: {{ inventoryitemroles }}"
+  tags: netbox
+
+- name: " Get net cpu manufacturer from netbox"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/manufacturers/?name={{ cpumanufacturer }}"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_cpumanufacturers
+  tags: netbox
+  # get the id
+
+- name: "set fact for netbox cpu manufacturer id"
+  set_fact:
+    netbox_cpumanufacturer_id: "{{ netbox_cpumanufacturers.json.results[0].id }}"
+  tags: netbox
+
+- name: "Debug virtual"
+  debug:
+    msg: "virtual: {{ virtual }}"
+  failed_when: True
+  tags: netbox
+
+- name: "Create n number of inventory items for the device in netbox called cpuN"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/{{ invpath }}/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "device": "{{ netbox_data.json.results[0].id }}",
+        "manufacturer": "{{ netbox_cpumanufacturer_id }}",
+        "name": "{{ processor_type }}",
+        "label": "{{ item }}",
+        "role": {{ inventoryitemroles['CPU'] }},
+        "asset_tag": "{{ assettag}}_{{ item }}",
+        "description": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_inventory_items_create
+  failed_when: False
+  with_items: "{{ socketloop }}"
+  when: virtual is false
+
+
+  # end of cpu loop
+
+  # Get GPU Data
+
+- name: "Collect hw data | find all physical gpu cards"
+  shell: "lspci|grep -i nvidia |awk -F':' '{ print $1 }'|sort -u"
+  register: gpucards_output
+  changed_when: false  # Don't consider the task as changed if the command is run
+
+- name: "Collect hw data | find all physical gpu cards | set fact"
+  set_fact:
+    gpucards: "{{ gpucards_output.stdout_lines }}"
+
+- name: "Collect hw data | if we havw gpu cards, then we need to collect data"
+  when: gpucards_output.stdout_lines | length > 0
+  shell:
+    cmd: "nvidia-smi -q -x"
+  register: nvidiasmi_output
+  changed_when: false  # Don't consider the task as changed if the command is run
+
+- name: "Collect hw data | if we have gpu cards, then we need to collect data | set fact"
+  set_fact:
+    nvidiasmi: "{{ nvidiasmi_output.stdout | ansible.utils.from_xml }}"
+  when: gpucards_output.stdout_lines | length > 0
+
+- name: "debug nvidiasmi"
+  set_fact:
+    gpus: "{{ nvidiasmi.nvidia_smi_log.gpu }}"
+  when: gpucards_output.stdout_lines | length > 0
+
+
+
+- name: "ensure nvidia is a manufactor in netbox"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/manufacturers/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "NVIDIA",
+        "slug": "nvidia",
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_manufacturer_create
+  failed_when: False
+  when: gpucards_output.stdout_lines | length > 0
+
+- name: "get data from netbox for manufacturer"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/manufacturers/?name=NVIDIA"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_manufacturer
+  when: gpucards_output.stdout_lines | length > 0
+
+- name: "setfact for nvidia manufacturer id"
+  set_fact:
+    netbox_manufacturer_id: "{{ netbox_manufacturer.json.results[0].id }}"
+  when: gpucards_output.stdout_lines | length > 0
+
+- name: "ensure tha netbox have an inventory role as GPU and make et pink"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/inventory-item-roles/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "GPU",
+        "slug": "GPU",
+        "color": "ff00ff",
+        "vm_role": false,
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_inventoryitemroles_create
+  failed_when: False
+  when: gpucards_output.stdout_lines | length > 0
+
+- name: " get the invetory roles for GPU"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/inventory-item-roles/?name=GPU"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_inventoryitemroles
+  when: gpucards_output.stdout_lines | length > 0
+
+- name: "set the fact for invetory id for GPU"
+  set_fact:
+    netbox_inventoryitemroles_id: "{{ netbox_inventoryitemroles.json.results[0].id }}"
+  when: gpucards_output.stdout_lines | length > 0
+
+- name: "Collect hw data | updata netbox inventory items"
+  uri:
+    url: "{{ netbox_url }}/api/dcim/inventory-items/"  # Replace this with the appropriate NetBox API endpoint URL
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {
+        "name": "{{ item.product_name }}",
+        "device": {{ netbox_data.json.results[0].id }},
+        "serial": {{ item.serial }},
+        "asset_tag": {{ item.serial }},
+        "manufacturer": {{ netbox_manufacturer_id }},
+        "discovered": "true",
+        "label": "{{ item.gpu_module_id }}",
+        "role": {{ netbox_inventoryitemroles_id }},
+        "part_id": "{{ item.gpu_part_number }}",
+        "description": "Auto created inventory item",
+        "inventory_item_role": {{ netbox_inventoryitemroles_id }},
+        "tags": [
+        ]
+      }
+    status_code: 201  # Expected HTTP status code for a successful response
+  with_items: "{{ gpus }}"
+  when: gpucards_output.stdout_lines | length > 0
+  failed_when: False
+  register: netbox_inventoryitems_created
+
+
+
+####################################################
+# DISK info 
+####################################################
+
+- name: "Run lsblk -J"
+  command: "lsblk -J"
+  register: lsblk_json
+  changed_when: false
+  become: true
+
+- name: "Set fact for ansible_facts"
+  set_fact:
+    lsblk: "{{ lsblk_json.stdout | from_json }}"
+  become: true
+
+- name: "Debug disk"
+  debug:
+    msg: "lsblk: {{ lsblk }}"
+  tags: netbox
+
+- name: "Debug disk"
+  set_fact:
+    blockdevices: "{{ lsblk.blockdevices }}"
+  tags: netbox
+
+
+- name: "Debug disk"
+  debug:
+    msg: "blockdevices: {{ blockdevices }}"
+  tags: netbox
+
+- name: "ensure we have an inventory role called STORAGE in netbox"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/inventory-item-roles/"
+    method: POST
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    body: |
+      {  
+        "name": "STORAGE",
+        "slug": "STORAGE",
+        "color": "ff00ff",
+        "vm_role": false,
+        "description": "Created by Ansible",
+        "comments": "Created by Ansible",
+        "tags": [
+        ]
+      }
+    status_code: 201
+  register: netbox_inventoryitemroles_create
+  failed_when: False
+  when: prepare_netbox == True
+  tags: netbox
+
+- name: " get the invetory roles for STORAGE"
+  delegate_to: localhost
+  uri:
+    url: "{{ netbox_url }}/api/dcim/inventory-item-roles/?name=STORAGE"
+    method: GET
+    headers: "{{ netbox_headers }}"
+    body_format: json
+    status_code: 200
+  register: netbox_inventoryitemroles
+  tags: netbox
+
+- name: "set the fact for invetory id for STORAGE"  
+  set_fact:
+    netbox_inventoryitemstoragerole_id: "{{ netbox_inventoryitemroles.json.results[0].id }}"
+  tags: netbox
+
+#- name: "Create inventory items for disks"
+#  delegate_to: localhost
+#  uri:
+#    url: "{{ netbox_url }}/api/dcim/inventory-items/"  # Replace this with the appropriate NetBox API endpoint URL
+#    method: POST
+#    headers: "{{ netbox_headers }}"
+#    body_format: json
+#    body: |
+#      {
+#        "name": "{{ item.name }}",
+#        "device": {{ netbox_data.json.results[0].id }},
+#        "serial": {{ item.serial }},
+#        "asset_tag": {{ item.serial }},
+#        "manufacturer": {{ netbox_manufacturer_id }},
+#        "discovered": "true",
+#        "label": "{{ item.name }}",
+#        "role": {{ netbox_inventoryitemstoragerole_id }},
+#        "part_id": "{{ item.part_id }}",
+#        "description": "Auto created inventory item",
+#        "inventory_item_role": {{ netbox_inventoryitemstoragerole_id }},
+#        "tags": [
+#        ]
+#      }
+#    status_code: 201  # Expected HTTP status code for a successful response
+#  loop: "{{ blockdevices }}"
+#  when: item.type == "disk"
+#  register: netbox_inventoryitems_created
+#  tags: netbox
+#
+
+
+
+
+
+
+
+
+
+
+

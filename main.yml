@@ -1,0 +1,67 @@
+---
+- name: "IPAM data syncronization | syncroniz data from server to netbox" 
+  hosts: all
+  vars:
+    mytags: [ 
+            { "name": "DISKDRIVE", "slug": "diskdrive", "color": "ffaaff", "description": "Conventional disk drive" },
+            { "name": "SSDDRIVE", "slug": "ssddrive", "color": "ffbbff", "description": "solidstate drive" },
+            { "name": "MEMORY", "slug": "memory", "color": "ffccff", "description": "solidstate drive" },
+            { "name": "GPU", "slug": "gpu", "color": "ffffff", "description": "Graphichs processor" },
+            { "name": "CPU", "slug": "cpu", "color": "ffccff", "description": "Central processing unit" }
+    ]
+    prepare_netbox: False
+    site: "unknown"
+    rack: "unknown"
+    tenant: "unknown"
+    tenant_group: "unknown"
+    cluster: "unknown"
+    cluster_group: "unknown"
+    region: "unknown"
+    facility: "unknown"
+    tenant_group: "unknown"
+    device_role: "unknown"
+    device_platform: "Linux"
+    physhwvendors: ["FUJITSU", "HPE"]
+    inventoryitemroles: ["CPU", "GPU", "MEMORY", "STORAGE", "NETWORK", "POWER", "OTHER"]
+    manufacturers: ["HPE", "VMware, Inc."]
+    virtualmanufacturers: ["VMware, Inc.", "QEMU", "VWware"]
+
+
+  tasks:
+    - name: test Run 
+      include_tasks: tasks/main.yml
+      tags: [ "test" ]
+      vars:
+        netbox_url: "https://netbox.openknowit.com"
+        netbox_token: "92ec5477ccab078bb82be2f98772d18035561eba"
+        path: "api/{{ virtual | bool | ternary('virtualization/virtual-machines','dcim/devices') }}"
+        invpath: "api/{{ virtual | bool | ternary('dcim/inventory-items','dcim/inventory-items') }}"
+        netbox_headers:
+          Content-Type: "application/json"
+          Authorization: "Token {{ netbox_token }}"
+          Accept: "application/json"
+        virtual: False
+        prepare_netbox: True
+        site: "unknown"
+        rack: "unknown"
+        tenant: "unknown"
+        tenant_group: "unknown"
+        cluster: "unknown"
+        cluster_group: "unknown"
+        region: "unknown"
+        facility: "unknown"
+        tenant_group: "unknown"
+        device_role: "unknown"
+        device_platform: "Linux"
+        physhwvendors: ["FUJITSU", "HPE"]
+        inventoryitemroles: ["CPU", "GPU", "MEMORY", "STORAGE", "NETWORK", "POWER", "OTHER"]
+        manufacturers: ["HPE", "VMware, Inc.", "FUJITSU", "QEMU", "Intel Corporation", "Supermicro", "Dell Inc.", "Cisco Systems, Inc.", "Lenovo", "VMware"]
+        virtualmanufacturers: ["VMware, Inc.", "QEMU", "VWware"]
+
+
+    
+
+    
+      
+
+  

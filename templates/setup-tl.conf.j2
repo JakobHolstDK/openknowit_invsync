@@ -1,0 +1,52 @@
+# ThinLinc tl-setup answers file
+#
+# Edit this file to suit your systems and run:
+#  /opt/thinlinc/sbin/tl-setup -a THIS-FILE
+
+# Accept the End User License Agreement
+accept-eula=yes
+
+# Configure as master or agent
+server-type={{ server_type }}
+
+# How should old Hiveconf files be handled?
+migrate-conf={{ migrate_conf }}
+
+# Install required libraries and binaries?
+install-required-libs={{ install_required_libs }}
+
+# Install nfs client packages?
+install-nfs={{ install_nfs }}
+
+# Install OpenSSH server?
+install-sshd={{ install_sshd }}
+
+# Install GTK+ and PyGObject packages?
+install-gtk={{ install_gtk }}
+
+# Install python-ldap packages?
+install-python-ldap={{ install_python_ldap }}
+
+# Send administrative messages to:
+email-address={{ email_address }}
+
+# Password for tlwebadm (generate with "/opt/thinlinc/sbin/tl-gen-auth"):
+tlwebadm-password={{ tlwebadm_password }}
+
+# Set up the thinlocal printing queue?
+setup-thinlocal={{ setup_thinlocal }}
+
+# Set up the nearest printing queue?
+setup-nearest={{ setup_nearest }}
+
+# Configure the local firewall for ThinLinc services?
+setup-firewall={{ setup_firewall }}
+
+# Set up SELinux policy module?
+setup-selinux={{ setup_selinux }}
+
+# Set up AppArmor configuration?
+setup-apparmor={{ setup_apparmor }}
+
+# What should tl-setup do when it encounters a question without a matching answer in the answer file?
+missing-answer=abort

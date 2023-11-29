@@ -1,0 +1,760 @@
+---
+- name: "IPAM data syncronization" 
+  hosts: localhost
+  vars:
+    mytags: [ 
+            { "name": "DISKDRIVE", "slug": "diskdrive", "color": "ffaaff", "description": "Conventional disk drive" },
+            { "name": "SSDDRIVE", "slug": "ssddrive", "color": "ffbbff", "description": "solidstate drive" },
+            { "name": "MEMORY", "slug": "memory", "color": "ffccff", "description": "solidstate drive" },
+            { "name": "GPU", "slug": "gpu", "color": "ffffff", "description": "Graphichs processor" },
+            { "name": "CPU", "slug": "cpu", "color": "ffccff", "description": "Central processing unit" }
+    ]
+
+    manufacturers: ["HPE", "VMware, Inc."]
+    inventoryitemroles: ["GPU", "CPU", "MEMORY", "DISK"]
+    virtualmanufacturers: ["VMware, Inc.", "QEMU"]
+
+  tasks:
+    - name: "IPAM data syncronization | Get Retrieve tags from NetBox API"
+      uri:
+        url: "{{ netbox_url }}/api/extras/tags/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_tags
+
+    - name: "IPAM data syncronization | init fact for existing tags "
+      set_fact:
+        existing_tags: []
+      when: existing_tags is not defined
+
+    - name: "IPAM data syncronization | set fact for existing tags "
+      set_fact:
+        existing_tags: "{{ netbox_tags.json.results | map(attribute='name') | list }}"
+      with_items: "{{ netbox_tags.json.results }}"
+      when: netbox_tags.json.results is defined
+
+    - name: "IPAM data syncronization | init fact for missing tags "
+      set_fact:
+        missing_tags: []
+      when: missing_tags is not defined
+
+    - name: "IPAM data syncronization | set fact for missing tags"
+      set_fact:
+        missing_tags: "{{ missing_tags | default([]) + [item] }}"
+      register: netbox_tags_missing_tags
+      when: item.name not in existing_tags
+      with_items: "{{ mytags }}"
+    
+    - name: "Debug"
+      debug:
+        msg: "missing_tags: {{ missing_tags }}"
+      when: missing_tags is defined and missing_tags | length > 0
+
+
+    - name: "IPAM data syncronization | create tags if the are missing"
+      uri:
+        url: "{{ netbox_url }}/api/extras/tags/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: POST
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        body_format: json
+        body: |
+          {
+            "name": "{{ item.name }}",
+            "slug": "{{ item.slug }}",
+            "color": "{{ item.color }}",
+            "Description": "{{ item.description }}",
+          }
+        status_code: 201  # Expected HTTP status code for a successful response
+      with_items: "{{ missing_tags }}"
+      register: netbox_netboxtags_created
+      when : missing_tags is defined and missing_tags | length > 0
+     
+    - name: "IPAM data syncronization | Get Retrieve tags from NetBox API"
+      uri:
+        url: "{{ netbox_url }}/api/extras/tags/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_tags
+
+    - name: "IPAM data syncronization | Save data to disk"
+      local_action: 
+        module: copy 
+        content: "{{ netbox_tags.json.results }}"
+        dest: "/tmp/netbox.tags.json"
+
+    - name: "IPAM data syncronization | Get Retrieve physical servers from NetBox API"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/devices/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_devices
+
+    - name: "IPAM data syncronization | Save data to disk"
+      local_action: 
+        module: copy 
+        content: "{{ netbox_devices.json.results }}"
+        dest: "/tmp/netbox.devices.json"
+
+    - name: "IPAM data syncronization  | Get invetory items"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/inventory-items/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_inventoryitems
+
+    - name: "IPAM data syncronization | Save the dato to disk"
+      local_action: 
+        module: copy 
+        content: "{{ netbox_inventoryitems.json.results }}"
+        dest: "/tmp/netbox.inventoryitems.json"
+
+    - name: "IPAM data syncronization | Get invetory items roles"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/inventory-item-roles/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token}} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_inventoryitemroles
+
+    - name: "IPAM data syncronization | Save the dato to disk"
+      local_action: 
+        module: copy 
+        content: "{{ netbox_inventoryitemroles.json.results }}"
+        dest: "/tmp/netbox.inventoryitemroles.json"
+
+    - name: "IPAN data syncronization| get manufacturers "
+      uri:
+        url: "{{ netbox_url }}/api/dcim/manufacturers/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token}} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_manufacturers
+
+    - name: "IPAM data syncronization| Save the dato to disk"
+      local_action: 
+        module: copy 
+        content: "{{ netbox_manufacturers.json.results }}"
+        dest: "/tmp/netbox.manufacturers.json"
+
+    - name: "IPAM data syncronization | Retrieve virtual servers from NetBox API"
+      uri:
+        url: "{{ netbox_url }}/api/virtualization/virtual-machines/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token}} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_virtualmachines
+
+    - name: "IPAM data syncronization | sef fact for virtual machines"
+      set_fact:
+        netbox_virtual_machines: "{{ netbox_virtualmachines.json.results | map(attribute='name') | list }}"
+      when: netbox_virtualmachines.json.results is defined
+
+
+    - name: "IPAM data syncronization | save vm data locally and temporayly"
+      local_action: 
+        module: copy 
+        content: "{{ netbox_virtualmachines.json.results }}"
+        dest: "/tmp/netbox.virtualmachines.json"
+
+    - name: "IPAM data syncronisation | Retrieve inventory-items for netbox API"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/inventory-items/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token}} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_inventoryitems
+    
+    - name: "IPAM data syncronization | save the data locally and temporayly"
+      local_action: 
+        module: copy 
+        content: "{{ netbox_inventoryitems.json.results }}"
+        dest: "/tmp/netbox.inventoryitems.json"
+
+
+
+    - name: "IPAM data syncronization  | Find orphaned inventory item roles"
+      set_fact:
+        orphaned_inventoryitemroles: "{{ netbox_inventoryitemroles.json.results | rejectattr('name', 'in', inventoryitemroles) | list }}"
+      when: netbox_inventoryitemroles.json.results is defined
+
+
+        ###################################################################################
+        # End of  ipan collect
+        ###################################################################################
+
+
+
+
+
+
+- name: "Collect hw data "
+  hosts: all
+  become: true
+  vars:
+    virtualmanufacturers: ["VMware, Inc.", "QEMU"]
+    dmidecode: [
+        "bios-vendor",
+        "bios-version",
+        "bios-release-date",
+        "bios-revision",
+        "firmware-revision",
+        "system-manufacturer",
+        "system-product-name",
+        "system-version",
+        "system-serial-number",
+        "system-uuid",
+        "system-sku-number",
+        "system-family",
+        "baseboard-manufacturer",
+        "baseboard-product-name",
+        "baseboard-version",
+        "baseboard-serial-number",
+        "baseboard-asset-tag",
+        "chassis-manufacturer",
+        "chassis-type",
+        "chassis-version",
+        "chassis-serial-number",
+        "chassis-asset-tag",
+        "processor-family",
+        "processor-manufacturer",
+        "processor-version",
+        "processor-frequency"
+    ]
+
+
+
+  
+  tasks:  
+    - name: "collect hw data | Check if I am a virtual machine"
+      set_fact:
+        virtual: true
+      when: ansible_virtualization_type == "VMware" or ansible_virtualization_type == "KVM" or ansible_virtualization_type == "VirtualBox" or ansible_virtualization_type == "xen" or ansible_virtualization_type == "Microsoft Hyper-V" or ansible_virtualization_type == "VirtualPC" or ansible_virtualization_type == "Virtual Machine" or ansible_virtualization_type == "VMware" or ansible_virtualization_type == "VMware ESXi" or ansible_virtualization_type == "VMware Server" or ansible_virtualization_type == "VMware Virtual Platform" or ansible_virtualization_type == "VMware, Inc." or ansible_virtualization_type == "VMware, Inc. VMware Virtual Platform" or ansible_virtualization_type == "VMware, Inc. VMware7,1" or ansible_virtualization_type == "VMware, Inc. VMware7,1 VMware Virtual Platform" or ansible_virtualization_type == "VMware, Inc. VMware7,1 VMware Virtual Platform/07.00/0.0"
+      when: virtual is not defined
+    
+    - name: "Collect hw data | Check if I am a physical server"
+      set_fact:
+        virtual: false
+      when: virtual is not defined
+
+    - name: "collect hw data | dmidecode --string loop on dmidecode"
+      shell: "dmidecode --string processor-manufacturer"
+      register: dmidecode_processor_manufacturer
+      changed_when: false  # Don't consider the task as changed if the command is run
+
+    - name: "collect hw data | debug dmidecode_output"
+      set_fact:
+        manufacturer: "{{ dmidecode_processor_manufacturer.stdout | split('\n') | list | first }}"
+
+    - name: "collect hw data | decode base64 data and save to netbox_virtualmachines"
+      set_fact:
+        netbox_virtualmachines: "{{ netbox_virtualmachines_slurp['content'] | b64decode | from_json }}"
+      when: netbox_virtualmachines_slurp['content'] is defined
+    
+    - name: "collect hw data | read json file  /tmp/netbox.devices.json"
+      local_action: 
+        module: slurp 
+        src: "/tmp/netbox.devices.json"
+      register: netbox_devices_slurp
+    
+    - name: "collect hw data | decode base64 data and save to netbox_devices"
+      set_fact:
+        netbox_devices: "{{ netbox_devices_slurp['content'] | b64decode | from_json }}"
+      when: netbox_devices_slurp['content'] is defined
+
+    - name: "collect hw data | read json file  /tmp/netbox.inventoryitems.json"
+      local_action: 
+        module: slurp 
+        src: "/tmp/netbox.inventoryitems.json"
+      register: netbox_inventoryitems_slurp
+
+    - name: "collect hw data | decode base64 data and save to netbox_inventoryitems"
+      set_fact:
+        netbox_inventoryitems: "{{ netbox_inventoryitems_slurp['content'] | b64decode | from_json }}"
+      when: netbox_inventoryitems_slurp['content'] is defined
+
+    - name: "collect hw data | read json file  /tmp/netbox.inventoryitems.json"
+      local_action: 
+        module: slurp 
+        src: "/tmp/netbox.inventoryitems.json"
+      register: netbox_inventoryitems_slurp
+
+    - name: "collect hw data | decode base64 data and save to netbox_inventoryitems"
+      set_fact:
+        netbox_inventoryitems: "{{ netbox_inventoryitems_slurp['content'] | b64decode | from_json }}"
+      when: netbox_inventoryitems_slurp['content'] is defined
+
+
+    - name: "collect hw data | read json file  /tmp/netbox.inventoryitemroles.json"
+      local_action: 
+        module: slurp 
+        src: "/tmp/netbox.inventoryitemroles.json"
+      register: netbox_inventoryitemroles_slurp
+
+    - name: "collect hw data | decode base64 data and save to netbox_inventoryitemroles"
+      set_fact:
+        netbox_inventoryitemroles: "{{ netbox_inventoryitemroles_slurp['content'] | b64decode | from_json }}"
+      when: netbox_inventoryitemroles_slurp['content'] is defined 
+
+    - name: "collect hw data | read json file  /tmp/netbox.manufacturers.json"
+      local_action: 
+        module: slurp 
+        src: "/tmp/netbox.manufacturers.json"
+      register: netbox_manufacturers_slurp
+
+    - name: "collect hw data | decode base64 data and save to netbox_manufacturers"
+      set_fact:
+        netbox_manufacturers: "{{ netbox_manufacturers_slurp['content'] | b64decode | from_json }}"
+      when: netbox_manufacturers_slurp['content'] is defined
+
+    - name: "Collect hw data  | Check if populate variable is set"
+      set_fact:
+        populate: "{{ populate | default(false) }}"
+      when: populate is not defined
+
+############################################################################################################################################
+#                                                                    CPU INFO                                                              #
+############################################################################################################################################
+
+    - name: "Collect hw data | dmidecode -t 4 (cpu details)"
+      shell: "dmidecode -t 4"
+      register: dmidecode_output
+      changed_when: false  # Don't consider the task as changed if the command is run
+
+    - name: "Collect hw data | debug dmidecode_output"
+      debug:
+        msg: "dmidecode_output: {{ dmidecode_output.stdout_lines }}"
+      when: dmidecode_output.stdout_lines | length > 0
+
+    - name: "Collect hw data | create pretty dmidecode_output"
+      set_fact:
+        dmidecode: "{{ dmidecode_output.stdout_lines | map('split', '\\t')| list |replace('\\t', '') }} "
+      when: dmidecode_output.stdout_lines | length > 0
+
+    - name: "Collect hw data | save dmidecode list as txt i /tmp"
+      local_action: 
+        module: copy 
+        content: "{{ dmidecode }}"
+        dest: "/tmp/{{ ansible_hostname }}.dmidecode.txt"
+      when: dmidecode_output.stdout_lines | length > 0
+
+    - name: "Collect hw data | set virtualvmxist to false"
+      set_fact:
+        virtualvmexists: false
+      when: virtualvmexists is not defined
+
+    - name: "Collect hw data |  Check if a virtual machine exits with our name"
+      set_fact:
+        virtualvmexists: true
+      when: virtual is defined and virtual == true and ansible_hostname in netbox_virtualmachines 
+
+# if the server isnt virtual check if there is a device in netbox
+    - name: "Collect hw data | set deviceexists to false"
+      set_fact:
+        deviceexists: false
+      when: deviceexists is not defined
+
+    - name: "Collect hw data | Check if a device exists "
+      set_fact:
+        deviceexists: true
+      when: ansible_hostname in netbox_devices
+
+    - name: "Collect hw data | debug devices"
+      debug:
+        msg: "netbox_devices: {{ netbox_devices }}"
+      when: netbox_devices is defined
+
+
+
+    - name: "Collect hw data  | get device id in netbox_devices"
+      set_fact:
+        device_id: "{{ netbox_devices | selectattr('name', 'equalto', ansible_hostname) | map(attribute='id') | list | first }}"
+      when: netbox_devices is defined and ansible_hostname in netbox_devices
+
+    - name: "Collect hw data | debug device_id"
+      debug:
+        msg: "device_id: {{ device_id }}"
+      when: device_id is defined
+
+    - name: "Collect hw data | debug device_id"
+      debug:
+        msg: "virtual: {{ virtual }}"
+      when: device_id is defined
+
+    - name: "Collect hw data | create the device if populate is true"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/devices/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: POST
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        body_format: json
+        body: |
+          {
+            "name": "{{ ansible_hostname }}",
+            "role": 36,
+            "description": "Auto created device",
+            "device_type": 10,
+            "site": 86,
+          }
+        status_code: 201  # Expected HTTP status code for a successful response
+      when:
+        - deviceexists == false
+        - virtual == false
+        - populate == true
+
+      register: netbox_server_create
+
+    - name: "Collect hw data | create the vm if populate and it is a vm that does not exist"
+      uri:
+        url: "{{ netbox_url }}/api/virtualization/virtual-machines/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: POST
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        body_format: json
+        body: |
+          {
+            "name": "{{ ansible_hostname }}",
+            "role": 35,
+            "description": "Auto created virtual machine",
+            "site": 86,
+          }
+        status_code: 201  # Expected HTTP status code for a successful response
+      when:
+        - virtual == true
+        - virtualvmexists == false
+        - populate == true
+      register: netbox_vm_create
+
+          
+
+
+
+
+
+    - name: "Collect hw data | Run lshw and capture output"
+      shell: lshw -json
+      register: lshw_output
+      changed_when: false  # Don't consider the task as changed if the command is run
+
+    - name: "Collect hw data | get memory info"
+      shell: "cat /proc/meminfo"
+      register: meminfo_output
+      changed_when: false  # Don't consider the task as changed if the command is run
+
+    - name: "Collect hw data | count the disk capacity"
+      shell: "lsblk -J -b"
+      register: lsblk_output
+      changed_when: false  # Don't consider the task as changed if the command is run
+
+    - name: "Collect hw data | count the cpus"
+      shell: "cat /proc/cpuinfo |grep processor|wc -l"
+      register: cpucount_output
+      changed_when: false  # Don't consider the task as changed if the command is run
+
+    - name: "Collect hw data | count the gpus (nvidia))"
+      shell: "lspci|grep -i nvidia |awk -F':' '{ print $1 }'|sort -u|wc -l"
+      register: gpucount_output
+      changed_when: false  # Don't consider the task as changed if the command is run
+
+    - name: "Collect hw data | Get hostname from inventory"
+      set_fact:
+        hostname_with_extension: "{{ inventory_hostname }}.json"
+    
+    - name: "Collect hw data | save cpu.json locally and temporary"
+      local_action: 
+        module: copy 
+        content: "{{ lshw_output.stdout }}"
+        dest: "/tmp/lswh.{{ hostname_with_extension }}"
+
+    
+
+###############################################################################
+# Save Raw data  and digest data
+###############################################################################
+    - name: "Collect hw data | save lshw.json locally and temporary"
+      local_action: 
+        module: copy 
+        content: "{{ cpucount_output.stdout }}"
+        dest: "/tmp/cpucount.{{ hostname_with_extension }}"
+
+    - name: "Collect hw data | save meminfo.json locally and temporary"
+      local_action: 
+        module: copy 
+        content: "{{ meminfo_output.stdout }}"
+        dest: "/tmp/meminfo.{{ hostname_with_extension }}"
+
+    - name: "Collect hw data | save diskcapacity.json locally and temporary"
+      local_action: 
+        module: copy 
+        content: "{{ lsblk_output.stdout }}"
+        dest: "/tmp/lsblk.{{ hostname_with_extension }}"
+
+    - name: "Collect hw data | save lshw.json locally and temporary"
+      local_action: 
+        module: copy 
+        content: "{{ gpucount_output.stdout }}"
+        dest: "/tmp/gpucount.{{ hostname_with_extension }}"
+
+###############################################################################
+# digest Raw data
+###############################################################################
+    - name: "Collect lshw data| parse the file running on local host"
+      local_action: 
+        command ./parse_lsblk.sh /tmp/lsblk.{{ hostname_with_extension }}
+      register: lsblk_parsed_output
+
+
+    - name: "Collect lshw data| set fact disk size"
+      set_fact:
+        disk_size: "{{ lsblk_parsed_output.stdout_lines[0] }}"
+
+
+
+###############################################################################
+# get lscpu data
+###############################################################################
+    - name: "Collect lscpu data| run lscpu"
+      shell: lscpu
+      register: lscpu_output
+
+    - name: "Collect lscpu data| set fact lscpu"
+      set_fact:
+        lscpu: "{{ lscpu_output.stdout_lines }}"
+    
+
+#save an inventory item if it does not exist based on cpu cpu partnumber
+
+
+
+#attach this device to the cpu inventory item in netbox
+
+
+
+###############################################################################
+# find all physical gpu cards  : Start of "GPU"
+###############################################################################
+
+# DETTE SKAL LAVES FOR CPU OGSÅ
+
+
+    - name: "Collect hw data | find all physical gpu cards"
+      shell: "lspci|grep -i nvidia |awk -F':' '{ print $1 }'|sort -u"
+      register: gpucards_output
+      changed_when: false  # Don't consider the task as changed if the command is run
+
+    - name: "Collect hw data | find all physical gpu cards | set fact"
+      set_fact:
+        gpucards: "{{ gpucards_output.stdout_lines }}"
+
+    - name: "Collect hw data | if we havw gpu cards, then we need to collect data"
+      when: gpucards_output.stdout_lines | length > 0
+      ansible.builtin.shell:
+        cmd: "nvidia-smi -q -x"
+      register: nvidiasmi_output
+      changed_when: false  # Don't consider the task as changed if the command is run
+
+    - name: "Collect hw data | save nvidiasmi.xml locally and temporary"
+      local_action: 
+        module: copy 
+        content: "{{ nvidiasmi_output.stdout }}"
+        dest: "/tmp/{{ ansible_hostname }}.nvidiasmi.xml"
+      when: gpucards_output.stdout_lines | length > 0
+
+    - name: "Collect hw data | convert the xml from windows to unix fileformat (dos2unix)"
+      local_action:
+        command dos2unix /tmp/{{ ansible_hostname }}.nvidiasmi.xml
+      when: gpucards_output.stdout_lines | length > 0
+
+    - name: "Collect hw data | if we havw gpu cards, then we need to collect data | set fact"
+      set_fact:
+        nvidiasmi: "{{ nvidiasmi_output.stdout }}"
+      when: gpucards_output.stdout_lines | length > 0
+
+    - name: "Collect hw data | we need to extract the data from the xml"
+      local_action: 
+        command ./parse_nvidia-smi.py /tmp/{{ ansible_hostname }}.nvidiasmi.xml
+      register: nvidia_smi_parsed_output
+      when: gpucards_output.stdout_lines | length > 0
+
+    - name: "Collect hw data | we need to extract the data from the xml | set fact"
+      set_fact:
+        nvidiasmi_parsed: "{{ nvidia_smi_parsed_output.stdout }}"
+      when: gpucards_output.stdout_lines | length > 0
+
+    - name: Collect hw data and register product names
+      set_fact:
+        product_names: "{{ product_names | default([]) + [item.product_name] }}"
+      when: gpucards_output.stdout_lines | length > 0
+      with_items: "{{ nvidiasmi_parsed }}"
+
+    - name: "Collect hw data  | get device id in netbox_devices"
+      set_fact:
+        device_id: "{{ netbox_devices | selectattr('name', 'equalto', ansible_hostname) | map(attribute='id') | list | first }}"
+
+    - name: "Collect hw data | get the existing inventory items"
+      set_fact:
+        existing_inventoryitems: "{{ netbox_inventoryitems | map(attribute='serial') | list }}"
+
+    - name: "Collect hw data | check if the serial number is in the existing inventory items"
+      set_fact:
+        missing_inventoryitems: []
+
+    - name: "Collect hw data | check if the serial number is in the existing inventory items"
+      #append the item to the missing_inventoryitems list
+      set_fact:
+        missing_inventoryitems: "{{ missing_inventoryitems | default([]) + [item] }}"
+      when: item.serial not in existing_inventoryitems
+      with_items: "{{ nvidiasmi_parsed }}"
+
+    - name: "Collect hw data | updata netbox inventory items"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/inventory-items/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: POST
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        body_format: json
+        body: |
+          {
+            "name": "{{ item.product_name }}",
+            "device": {{ device_id }},
+            "serial": {{ item.serial }},
+            "asset_tag": {{ item.serial }},
+            "manufacturer": 14,
+            "discovered": "true",
+            "label": "GPU",
+            "part_id": "{{ item.gpu_part_number }}",
+            "description": "Auto created inventory item",
+            "inventory_item_role": 1,
+
+          }
+        status_code: 201  # Expected HTTP status code for a successful response
+      with_items: "{{ missing_inventoryitems }}"
+      register: netbox_inventoryitems_created
+      when : missing_inventoryitems is defined and missing_inventoryitems | length > 0
+
+      ###############################################################################################################################################################################
+      # End of GPU
+      ###############################################################################################################################################################################
+
+    - name: "Collect hw data | Registering the cpu data in netbox | finding existing inventory items with the label CPU"
+      set_fact:
+        existing_inventoryicpuitems: "{{ netbox_inventoryitems | select('match', 'label', 'CPU') | map list }}"
+      when: netbox_inventoryitems is defined
+
+    - name: "Collect hw data | Registering the cpu data in netbox | init missing inventory cpu items fact"
+      set_fact:
+        missing_inventorycpuitems: []
+      when: missing_inventorycpuitems is not defined
+
+    - name: "Collect hw data | loop trough cpu ids"
+      set_fact:
+        missing_inventorycpuitems: "{{ missing_inventorycpuitems | default([]) + [item] }}"
+      when: item.serial not in existing_inventoryitems
+      with_items: "{{ cpuid }}"
+      when: cpuid is defined
+
+    - name: "Collect hw data | Registering the cpu data in netbox | create the cpu inventory items"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/inventory-items/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: POST
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        body_format: json
+        body: |
+          {
+            "name": "{{ ansible_hostname }}",
+            "device": {{ device_id }},
+            "serial": {{ cpuid }},
+            "asset_tag": {{ cpuid }},
+            "manufacturer": 13,
+            "discovered": "true",
+            "label": "CPU",
+            "part_id": "{{ cpuid }}",
+            "description": "Auto created inventory item",
+            "inventory_item_role": 2,
+          }
+        status_code: 201  # Expected HTTP status code for a successful response
+      with_items: "{{ missing_inventorycpuitems }}"
+      register: netbox_inventoryitems_created
+      when : missing_inventorycpuitems is defined and missing_inventorycpuitems | length > 0
+
+
+
+
+
+
+
+
+
+
+   
+#    - name: "Collect hw data | create a netbox inventory_item for each product in gpudata"
+#      netbox.netbox.netbox_inventory_item:
+#        netbox_url: "{{ netbox_url }}"
+#        netbox_token: "{{ netbox_token }}"
+#        data: 
+#          name: "testitem"
+#          device: "ritesgpu01fl"
+#        state: present
+#      when: gpucards_output.stdout_lines | length > 0
+
+#    - name: "Collect hw data | create a netbox inventory_item for each product in gpudata"
+#      netbox.netbox.netbox_inventory_item:
+#        netbox_url: "{{ netbox_url }}"
+#        netbox_token: "{{ netbox_token }}"
+#        data: 
+#          name: "{{  item.product_name }}"
+#          asset_tag: "{{ item.serial }}"
+#          description: "Auto created inventory item"
+#          device: ""
+#          manufacturer: "NVIDIA"
+#          discovered: "true"
+#          inventory_item_role: "GPU"
+#          label: "GPU"
+#          manufacturer: "nvidia"
+#          part_id: "{{ item.gpu_part_number }}"
+#          serial: "{{ item.serial }}"
+#        state: present
+#      with_items: "{{ nvidiasmi_parsed }}"
+#      when: gpucards_output.stdout_lines | length > 0
+
+
+
+
+
+#    - name: "Create config context for each gpu card"
+#        netbox.netbox.netbox_config_context:
+#        netbox_url: {{ netbox_url }}
+#        netbox_token: {{ netbox_token }}
+#        data:
+#          name: "testgpu"
+#          description: "testgpu card for testing"
+#          data: "{ \"\": { \"nameservers\": [ \"9.9.9.9\" ] } }"
+#          sites: [ euc1-az1, euc1-az2 ]
+#
+

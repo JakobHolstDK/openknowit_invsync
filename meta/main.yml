@@ -1,0 +1,29 @@
+  author: IT infrastructure
+  description: Inventory sync
+  company: ku
+
+  license: GPLv2
+
+  min_ansible_version: 2.9
+
+  platforms:
+  - name: RedHat
+    versions:
+    - 8.5
+    - 8.4
+    - 8.5
+    - 8.6
+    - 8.7
+    - 8.8
+    - 8.9
+    - 8.10
+    - 9.0
+    - 9.1
+    - 9.2
+    - 9.3
+
+  galaxy_tags:
+  - netbox
+  - inventory
+
+dependencies: []

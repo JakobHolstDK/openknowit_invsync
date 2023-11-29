@@ -1,0 +1,662 @@
+SSH_TTY': '/dev/pts/0'
+ 'BASH_FUNC_which%%': '() {  ( alias;\\n eval ${which_declare} ) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot $@\\n}'}
+ 'system_capabilities_enforced': 'True'
+ 'system_capabilities': ['']
+ 'distribution': 'RedHat'
+ 'distribution_release': 'Plow'
+ 'distribution_version': '9.2'
+ 'distribution_major_version': '9'
+ 'distribution_file_path': '/etc/redhat-release'
+ 'distribution_file_variety': 'RedHat'
+ 'distribution_file_parsed': True
+ 'distribution_file_search_string': 'Red Hat'
+ 'os_family': 'RedHat'
+ 'date_time': {'year': '2023'
+ 'month': '11'
+ 'weekday': 'Tuesday'
+ 'weekday_number': '2'
+ 'weeknumber': '46'
+ 'day': '14'
+ 'hour': '09'
+ 'minute': '43'
+ 'second': '45'
+ 'epoch': '1699955025'
+ 'epoch_int': '1699955025'
+ 'date': '2023-11-14'
+ 'time': '09:43:45'
+ 'iso8601_micro': '2023-11-14T09:43:45.999804Z'
+ 'iso8601': '2023-11-14T09:43:45Z'
+ 'iso8601_basic': '20231114T094345999804'
+ 'iso8601_basic_short': '20231114T094345'
+ 'tz': 'UTC'
+ 'tz_dst': 'UTC'
+ 'tz_offset': '+0000'}
+ 'ssh_host_key_rsa_public': 'AAAAB3NzaC1yc2EAAAADAQABAAABgQCt0IC+OA1uYPVEpa91tYktUWnev8QYE+yRNISbD84kl2mRFg1QOn9jRKCZo7MjR8Jcm9mnI+/BLdDhDXIHYuTS7O2bGFlmbSXkjSOx22pHgdOzv/ywS32ZhiQeHTudDwyxUP423IL1lr/FBnuKgbw1WiNO55fHzBw0xqS7/GEnLPP9AkHQrCPwyzT6wtiO15PDVU+tPw0KYOZWF098mpbDH6qm8vZTKi/gYRZZ3wwtphqp+uOC8SBx3xlgF0VJF2+2Ku4XJWc11eBI2r+qJyILsdQAMKqB4qdZICXKCe8kCjhsvxMudJ0rxceqsmWjGsbiNogiEmyr5hsGAz2CoV7VivzxkKCQpEgZYo206UYtTQgAZKGgr+bFSoYiuzE0aSeRSLE5qXmAQPuxcsFv2Dw43hxWjdHE3fwPW8fgny0NoMTx4MPg5Ckyau8bQs36QZq+AhBkvuj0V4aFMT4vK1kDJtaeoN9vRM0Hd2ijVRjXmofzVFxVUPc+l/M++RUZPqs='
+ 'ssh_host_key_rsa_public_keytype': 'ssh-rsa'
+ 'ssh_host_key_ecdsa_public': 'AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBH6EJwrUA6W4gTIADlJJ1AZkEcwm8+7B3p0zGwjEWHazj80wn98BnS6LsBNEkUsIXzlK1ucCpQtD2rjMOYAL+EY='
+ 'ssh_host_key_ecdsa_public_keytype': 'ecdsa-sha2-nistp256'
+ 'ssh_host_key_ed25519_public': 'AAAAC3NzaC1lZDI1NTE5AAAAIEsrH34+DthCxqkymHmNSeyl9UXhZuFhbXX8peoTY68k'
+ 'ssh_host_key_ed25519_public_keytype': 'ssh-ed25519'
+ 'selinux_python_present': True
+ 'selinux': {'status': 'enabled'
+ 'policyvers': 33
+ 'config_mode': 'enforcing'
+ 'mode': 'enforcing'
+ 'type': 'targeted'}
+ 'python': {'version': {'major': 3
+ 'minor': 9
+ 'micro': 16
+ 'releaselevel': 'final'
+ 'serial': 0}
+ 'version_info': [3
+ 9
+ 16
+ 'final'
+ 0]
+ 'executable': '/usr/bin/python3'
+ 'has_sslcontext': True
+ 'type': 'cpython'}
+ 'fips': False
+ 'cmdline': {'BOOT_IMAGE': '(hd1
+msdos1)/vmlinuz-5.14.0-284.30.1.el9_2.x86_64'
+ 'root': 'UUID=d8f5fdb0-0530-41bf-af68-6f6fb4c94184'
+ 'ro': True
+ 'nofb': True
+ 'quiet': True
+ 'splash': 'quiet'
+ 'crashkernel': '1G-4G:192M
+4G-64G:256M
+64G-:512M'
+ 'resume': 'UUID=398ed5e9-87b9-476f-addd-1e7dfa71bc9b'
+ 'nomodeset': True
+ 'psi': '1'}
+ 'proc_cmdline': {'BOOT_IMAGE': '(hd1
+msdos1)/vmlinuz-5.14.0-284.30.1.el9_2.x86_64'
+ 'root': 'UUID=d8f5fdb0-0530-41bf-af68-6f6fb4c94184'
+ 'ro': True
+ 'nofb': True
+ 'quiet': True
+ 'splash': 'quiet'
+ 'crashkernel': '1G-4G:192M
+4G-64G:256M
+64G-:512M'
+ 'resume': 'UUID=398ed5e9-87b9-476f-addd-1e7dfa71bc9b'
+ 'nomodeset': True
+ 'psi': '1'}
+ 'dns': {'search': ['unicph.domain']
+ 'nameservers': ['10.77.128.90'
+ '10.77.0.90']}
+ 'iscsi_iqn': ''
+ 'fibre_channel_wwn': []
+ 'lsb': {}
+ 'processor': ['0'
+ 'GenuineIntel'
+ 'Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz']
+ 'processor_count': 1
+ 'processor_cores': 1
+ 'processor_threads_per_core': 1
+ 'processor_vcpus': 1
+ 'processor_nproc': 1
+ 'memtotal_mb': 1766
+ 'memfree_mb': 409
+ 'swaptotal_mb': 10238
+ 'swapfree_mb': 10238
+ 'memory_mb': {'real': {'total': 1766
+ 'used': 1357
+ 'free': 409}
+ 'nocache': {'free': 1327
+ 'used': 439}
+ 'swap': {'total': 10238
+ 'free': 10238
+ 'used': 0
+ 'cached': 0}}
+ 'bios_date': '11/12/2020'
+ 'bios_vendor': 'Phoenix Technologies LTD'
+ 'bios_version': '6.00'
+ 'board_asset_tag': 'NA'
+ 'board_name': '440BX Desktop Reference Platform'
+ 'board_serial': 'NA'
+ 'board_vendor': 'Intel Corporation'
+ 'board_version': 'None'
+ 'chassis_asset_tag': 'No Asset Tag'
+ 'chassis_serial': 'NA'
+ 'chassis_vendor': 'No Enclosure'
+ 'chassis_version': 'N/A'
+ 'form_factor': 'Other'
+ 'product_name': 'VMware Virtual Platform'
+ 'product_serial': 'NA'
+ 'product_uuid': 'NA'
+ 'product_version': 'None'
+ 'system_vendor': 'VMware
+ Inc.'
+ 'devices': {'sdf': {'virtual': 1
+ 'links': {'ids': []
+ 'uuids': []
+ 'labels': []
+ 'masters': []}
+ 'vendor': 'VMware'
+ 'model': 'Virtual disk'
+ 'sas_address': None
+ 'sas_device_handle': None
+ 'removable': '0'
+ 'support_discard': '0'
+ 'partitions': {}
+ 'rotational': '1'
+ 'scheduler_mode': 'mq-deadline'
+ 'sectors': '8388608'
+ 'sectorsize': '512'
+ 'size': '4.00 GB'
+ 'host': 'Serial Attached SCSI controller: VMware PVSCSI SCSI Controller (rev 02)'
+ 'holders': []}
+ 'sdd': {'virtual': 1
+ 'links': {'ids': []
+ 'uuids': []
+ 'labels': []
+ 'masters': []}
+ 'vendor': 'VMware'
+ 'model': 'Virtual disk'
+ 'sas_address': None
+ 'sas_device_handle': None
+ 'removable': '0'
+ 'support_discard': '0'
+ 'partitions': {'sdd1': {'links': {'ids': []
+ 'uuids': ['e8a696aa-e24e-438b-9564-89fc6d9e04cb']
+ 'labels': []
+ 'masters': []}
+ 'start': '2048'
+ 'sectors': '20969472'
+ 'sectorsize': 512
+ 'size': '10.00 GB'
+ 'uuid': 'e8a696aa-e24e-438b-9564-89fc6d9e04cb'
+ 'holders': []}}
+ 'rotational': '1'
+ 'scheduler_mode': 'mq-deadline'
+ 'sectors': '20971520'
+ 'sectorsize': '512'
+ 'size': '10.00 GB'
+ 'host': 'Serial Attached SCSI controller: VMware PVSCSI SCSI Controller (rev 02)'
+ 'holders': []}
+ 'sdb': {'virtual': 1
+ 'links': {'ids': []
+ 'uuids': []
+ 'labels': []
+ 'masters': []}
+ 'vendor': 'VMware'
+ 'model': 'Virtual disk'
+ 'sas_address': None
+ 'sas_device_handle': None
+ 'removable': '0'
+ 'support_discard': '0'
+ 'partitions': {'sdb1': {'links': {'ids': []
+ 'uuids': ['79bae04f-537e-4531-b644-67df55317743']
+ 'labels': []
+ 'masters': []}
+ 'start': '2048'
+ 'sectors': '4192256'
+ 'sectorsize': 512
+ 'size': '2.00 GB'
+ 'uuid': '79bae04f-537e-4531-b644-67df55317743'
+ 'holders': []}}
+ 'rotational': '1'
+ 'scheduler_mode': 'mq-deadline'
+ 'sectors': '4194304'
+ 'sectorsize': '512'
+ 'size': '2.00 GB'
+ 'host': 'Serial Attached SCSI controller: VMware PVSCSI SCSI Controller (rev 02)'
+ 'holders': []}
+ 'sde': {'virtual': 1
+ 'links': {'ids': []
+ 'uuids': []
+ 'labels': []
+ 'masters': []}
+ 'vendor': 'VMware'
+ 'model': 'Virtual disk'
+ 'sas_address': None
+ 'sas_device_handle': None
+ 'removable': '0'
+ 'support_discard': '0'
+ 'partitions': {'sde1': {'links': {'ids': []
+ 'uuids': ['398ed5e9-87b9-476f-addd-1e7dfa71bc9b']
+ 'labels': []
+ 'masters': []}
+ 'start': '2048'
+ 'sectors': '20969472'
+ 'sectorsize': 512
+ 'size': '10.00 GB'
+ 'uuid': '398ed5e9-87b9-476f-addd-1e7dfa71bc9b'
+ 'holders': []}}
+ 'rotational': '1'
+ 'scheduler_mode': 'mq-deadline'
+ 'sectors': '20971520'
+ 'sectorsize': '512'
+ 'size': '10.00 GB'
+ 'host': 'Serial Attached SCSI controller: VMware PVSCSI SCSI Controller (rev 02)'
+ 'holders': []}
+ 'sdc': {'virtual': 1
+ 'links': {'ids': []
+ 'uuids': []
+ 'labels': []
+ 'masters': []}
+ 'vendor': 'VMware'
+ 'model': 'Virtual disk'
+ 'sas_address': None
+ 'sas_device_handle': None
+ 'removable': '0'
+ 'support_discard': '0'
+ 'partitions': {'sdc2': {'links': {'ids': []
+ 'uuids': ['91ac735f-b005-4cb9-b097-b6912e20892e']
+ 'labels': []
+ 'masters': []}
+ 'start': '20971520'
+ 'sectors': '20969472'
+ 'sectorsize': 512
+ 'size': '10.00 GB'
+ 'uuid': '91ac735f-b005-4cb9-b097-b6912e20892e'
+ 'holders': []}
+ 'sdc1': {'links': {'ids': []
+ 'uuids': ['0f5aee39-1a09-4177-9d36-0c62cf4a3f54']
+ 'labels': []
+ 'masters': []}
+ 'start': '2048'
+ 'sectors': '20969472'
+ 'sectorsize': 512
+ 'size': '10.00 GB'
+ 'uuid': '0f5aee39-1a09-4177-9d36-0c62cf4a3f54'
+ 'holders': []}}
+ 'rotational': '1'
+ 'scheduler_mode': 'mq-deadline'
+ 'sectors': '41943040'
+ 'sectorsize': '512'
+ 'size': '20.00 GB'
+ 'host': 'Serial Attached SCSI controller: VMware PVSCSI SCSI Controller (rev 02)'
+ 'holders': []}
+ 'sda': {'virtual': 1
+ 'links': {'ids': []
+ 'uuids': []
+ 'labels': []
+ 'masters': []}
+ 'vendor': 'VMware'
+ 'model': 'Virtual disk'
+ 'sas_address': None
+ 'sas_device_handle': None
+ 'removable': '0'
+ 'support_discard': '0'
+ 'partitions': {'sda1': {'links': {'ids': []
+ 'uuids': ['d8f5fdb0-0530-41bf-af68-6f6fb4c94184']
+ 'labels': []
+ 'masters': []}
+ 'start': '2048'
+ 'sectors': '41940992'
+ 'sectorsize': 512
+ 'size': '20.00 GB'
+ 'uuid': 'd8f5fdb0-0530-41bf-af68-6f6fb4c94184'
+ 'holders': []}}
+ 'rotational': '1'
+ 'scheduler_mode': 'mq-deadline'
+ 'sectors': '41943040'
+ 'sectorsize': '512'
+ 'size': '20.00 GB'
+ 'host': 'Serial Attached SCSI controller: VMware PVSCSI SCSI Controller (rev 02)'
+ 'holders': []}}
+ 'device_links': {'ids': {}
+ 'uuids': {'sdb1': ['79bae04f-537e-4531-b644-67df55317743']
+ 'sdc1': ['0f5aee39-1a09-4177-9d36-0c62cf4a3f54']
+ 'sde1': ['398ed5e9-87b9-476f-addd-1e7dfa71bc9b']
+ 'sdc2': ['91ac735f-b005-4cb9-b097-b6912e20892e']
+ 'sdd1': ['e8a696aa-e24e-438b-9564-89fc6d9e04cb']
+ 'sda1': ['d8f5fdb0-0530-41bf-af68-6f6fb4c94184']}
+ 'labels': {}
+ 'masters': {}}
+ 'uptime_seconds': 4824994
+ 'lvm': 'N/A'
+ 'mounts': [{'mount': '/'
+ 'device': '/dev/sda1'
+ 'fstype': 'xfs'
+ 'options': 'rw
+seclabel
+relatime
+attr2
+inode64
+logbufs=8
+logbsize=32k
+noquota'
+ 'size_total': 21463302144
+ 'size_available': 19206770688
+ 'block_size': 4096
+ 'block_total': 5240064
+ 'block_available': 4689153
+ 'block_used': 550911
+ 'inode_total': 10485248
+ 'inode_available': 10425781
+ 'inode_used': 59467
+ 'uuid': 'd8f5fdb0-0530-41bf-af68-6f6fb4c94184'}
+ {'mount': '/boot'
+ 'device': '/dev/sdb1'
+ 'fstype': 'xfs'
+ 'options': 'rw
+seclabel
+relatime
+attr2
+inode64
+logbufs=8
+logbsize=32k
+noquota'
+ 'size_total': 2135949312
+ 'size_available': 1771589632
+ 'block_size': 4096
+ 'block_total': 521472
+ 'block_available': 432517
+ 'block_used': 88955
+ 'inode_total': 1048064
+ 'inode_available': 1047690
+ 'inode_used': 374
+ 'uuid': '79bae04f-537e-4531-b644-67df55317743'}
+ {'mount': '/home'
+ 'device': '/dev/sdd1'
+ 'fstype': 'xfs'
+ 'options': 'rw
+seclabel
+relatime
+attr2
+inode64
+logbufs=8
+logbsize=32k
+noquota'
+ 'size_total': 10725883904
+ 'size_available': 10616606720
+ 'block_size': 4096
+ 'block_total': 2618624
+ 'block_available': 2591945
+ 'block_used': 26679
+ 'inode_total': 5242368
+ 'inode_available': 5242328
+ 'inode_used': 40
+ 'uuid': 'e8a696aa-e24e-438b-9564-89fc6d9e04cb'}
+ {'mount': '/var'
+ 'device': '/dev/sdc1'
+ 'fstype': 'xfs'
+ 'options': 'rw
+seclabel
+relatime
+attr2
+inode64
+logbufs=8
+logbsize=32k
+noquota'
+ 'size_total': 10725883904
+ 'size_available': 9762332672
+ 'block_size': 4096
+ 'block_total': 2618624
+ 'block_available': 2383382
+ 'block_used': 235242
+ 'inode_total': 5242368
+ 'inode_available': 5239752
+ 'inode_used': 2616
+ 'uuid': '0f5aee39-1a09-4177-9d36-0c62cf4a3f54'}
+ {'mount': '/var/log'
+ 'device': '/dev/sdc2'
+ 'fstype': 'xfs'
+ 'options': 'rw
+seclabel
+relatime
+attr2
+inode64
+logbufs=8
+logbsize=32k
+noquota'
+ 'size_total': 10725883904
+ 'size_available': 10519826432
+ 'block_size': 4096
+ 'block_total': 2618624
+ 'block_available': 2568317
+ 'block_used': 50307
+ 'inode_total': 5242368
+ 'inode_available': 5242117
+ 'inode_used': 251
+ 'uuid': '91ac735f-b005-4cb9-b097-b6912e20892e'}]
+ 'apparmor': {'status': 'disabled'}
+ 'ansible_local': {'bootstrapped': '2023-09-21T07:27:16Z'}
+ 'is_chroot': False
+ 'interfaces': ['ens192'
+ 'lo']
+ 'lo': {'device': 'lo'
+ 'mtu': 65536
+ 'active': True
+ 'type': 'loopback'
+ 'promisc': False
+ 'ipv4': {'address': '127.0.0.1'
+ 'broadcast': ''
+ 'netmask': '255.0.0.0'
+ 'network': '127.0.0.0'
+ 'prefix': '8'}
+ 'ipv6': [{'address': '::1'
+ 'prefix': '128'
+ 'scope': 'host'}]
+ 'features': {'rx_checksumming': 'on [fixed]'
+ 'tx_checksumming': 'on'
+ 'tx_checksum_ipv4': 'off [fixed]'
+ 'tx_checksum_ip_generic': 'on [fixed]'
+ 'tx_checksum_ipv6': 'off [fixed]'
+ 'tx_checksum_fcoe_crc': 'off [fixed]'
+ 'tx_checksum_sctp': 'on [fixed]'
+ 'scatter_gather': 'on'
+ 'tx_scatter_gather': 'on [fixed]'
+ 'tx_scatter_gather_fraglist': 'on [fixed]'
+ 'tcp_segmentation_offload': 'on'
+ 'tx_tcp_segmentation': 'on'
+ 'tx_tcp_ecn_segmentation': 'on'
+ 'tx_tcp_mangleid_segmentation': 'on'
+ 'tx_tcp6_segmentation': 'on'
+ 'generic_segmentation_offload': 'on'
+ 'generic_receive_offload': 'on'
+ 'large_receive_offload': 'off [fixed]'
+ 'rx_vlan_offload': 'off [fixed]'
+ 'tx_vlan_offload': 'off [fixed]'
+ 'ntuple_filters': 'off [fixed]'
+ 'receive_hashing': 'off [fixed]'
+ 'highdma': 'on [fixed]'
+ 'rx_vlan_filter': 'off [fixed]'
+ 'vlan_challenged': 'on [fixed]'
+ 'tx_lockless': 'on [fixed]'
+ 'netns_local': 'on [fixed]'
+ 'tx_gso_robust': 'off [fixed]'
+ 'tx_fcoe_segmentation': 'off [fixed]'
+ 'tx_gre_segmentation': 'off [fixed]'
+ 'tx_gre_csum_segmentation': 'off [fixed]'
+ 'tx_ipxip4_segmentation': 'off [fixed]'
+ 'tx_ipxip6_segmentation': 'off [fixed]'
+ 'tx_udp_tnl_segmentation': 'off [fixed]'
+ 'tx_udp_tnl_csum_segmentation': 'off [fixed]'
+ 'tx_gso_partial': 'off [fixed]'
+ 'tx_tunnel_remcsum_segmentation': 'off [fixed]'
+ 'tx_sctp_segmentation': 'on'
+ 'tx_esp_segmentation': 'off [fixed]'
+ 'tx_udp_segmentation': 'on'
+ 'tx_gso_list': 'on'
+ 'fcoe_mtu': 'off [fixed]'
+ 'tx_nocache_copy': 'off [fixed]'
+ 'loopback': 'on [fixed]'
+ 'rx_fcs': 'off [fixed]'
+ 'rx_all': 'off [fixed]'
+ 'tx_vlan_stag_hw_insert': 'off [fixed]'
+ 'rx_vlan_stag_hw_parse': 'off [fixed]'
+ 'rx_vlan_stag_filter': 'off [fixed]'
+ 'l2_fwd_offload': 'off [fixed]'
+ 'hw_tc_offload': 'off [fixed]'
+ 'esp_hw_offload': 'off [fixed]'
+ 'esp_tx_csum_hw_offload': 'off [fixed]'
+ 'rx_udp_tunnel_port_offload': 'off [fixed]'
+ 'tls_hw_tx_offload': 'off [fixed]'
+ 'tls_hw_rx_offload': 'off [fixed]'
+ 'rx_gro_hw': 'off [fixed]'
+ 'tls_hw_record': 'off [fixed]'
+ 'rx_gro_list': 'off'
+ 'macsec_hw_offload': 'off [fixed]'
+ 'rx_udp_gro_forwarding': 'off'
+ 'hsr_tag_ins_offload': 'off [fixed]'
+ 'hsr_tag_rm_offload': 'off [fixed]'
+ 'hsr_fwd_offload': 'off [fixed]'
+ 'hsr_dup_offload': 'off [fixed]'}
+ 'timestamping': []
+ 'hw_timestamp_filters': []}
+ 'ens192': {'device': 'ens192'
+ 'macaddress': '00:50:56:83:43:24'
+ 'mtu': 1500
+ 'active': True
+ 'module': 'vmxnet3'
+ 'type': 'ether'
+ 'pciid': '0000:0b:00.0'
+ 'speed': 10000
+ 'promisc': False
+ 'ipv4': {'address': '10.84.4.120'
+ 'broadcast': '10.84.127.255'
+ 'netmask': '255.255.128.0'
+ 'network': '10.84.0.0'
+ 'prefix': '17'}
+ 'ipv6': [{'address': 'fe80::250:56ff:fe83:4324'
+ 'prefix': '64'
+ 'scope': 'link'}]
+ 'features': {'rx_checksumming': 'on'
+ 'tx_checksumming': 'on'
+ 'tx_checksum_ipv4': 'off [fixed]'
+ 'tx_checksum_ip_generic': 'on'
+ 'tx_checksum_ipv6': 'off [fixed]'
+ 'tx_checksum_fcoe_crc': 'off [fixed]'
+ 'tx_checksum_sctp': 'off [fixed]'
+ 'scatter_gather': 'on'
+ 'tx_scatter_gather': 'on'
+ 'tx_scatter_gather_fraglist': 'off [fixed]'
+ 'tcp_segmentation_offload': 'on'
+ 'tx_tcp_segmentation': 'on'
+ 'tx_tcp_ecn_segmentation': 'off [fixed]'
+ 'tx_tcp_mangleid_segmentation': 'off'
+ 'tx_tcp6_segmentation': 'on'
+ 'generic_segmentation_offload': 'on'
+ 'generic_receive_offload': 'on'
+ 'large_receive_offload': 'on'
+ 'rx_vlan_offload': 'on'
+ 'tx_vlan_offload': 'on'
+ 'ntuple_filters': 'off [fixed]'
+ 'receive_hashing': 'off [fixed]'
+ 'highdma': 'on'
+ 'rx_vlan_filter': 'on [fixed]'
+ 'vlan_challenged': 'off [fixed]'
+ 'tx_lockless': 'off [fixed]'
+ 'netns_local': 'off [fixed]'
+ 'tx_gso_robust': 'off [fixed]'
+ 'tx_fcoe_segmentation': 'off [fixed]'
+ 'tx_gre_segmentation': 'off [fixed]'
+ 'tx_gre_csum_segmentation': 'off [fixed]'
+ 'tx_ipxip4_segmentation': 'off [fixed]'
+ 'tx_ipxip6_segmentation': 'off [fixed]'
+ 'tx_udp_tnl_segmentation': 'on'
+ 'tx_udp_tnl_csum_segmentation': 'on'
+ 'tx_gso_partial': 'off [fixed]'
+ 'tx_tunnel_remcsum_segmentation': 'off [fixed]'
+ 'tx_sctp_segmentation': 'off [fixed]'
+ 'tx_esp_segmentation': 'off [fixed]'
+ 'tx_udp_segmentation': 'off [fixed]'
+ 'tx_gso_list': 'off [fixed]'
+ 'fcoe_mtu': 'off [fixed]'
+ 'tx_nocache_copy': 'off'
+ 'loopback': 'off [fixed]'
+ 'rx_fcs': 'off [fixed]'
+ 'rx_all': 'off [fixed]'
+ 'tx_vlan_stag_hw_insert': 'off [fixed]'
+ 'rx_vlan_stag_hw_parse': 'off [fixed]'
+ 'rx_vlan_stag_filter': 'off [fixed]'
+ 'l2_fwd_offload': 'off [fixed]'
+ 'hw_tc_offload': 'off [fixed]'
+ 'esp_hw_offload': 'off [fixed]'
+ 'esp_tx_csum_hw_offload': 'off [fixed]'
+ 'rx_udp_tunnel_port_offload': 'off [fixed]'
+ 'tls_hw_tx_offload': 'off [fixed]'
+ 'tls_hw_rx_offload': 'off [fixed]'
+ 'rx_gro_hw': 'off [fixed]'
+ 'tls_hw_record': 'off [fixed]'
+ 'rx_gro_list': 'off'
+ 'macsec_hw_offload': 'off [fixed]'
+ 'rx_udp_gro_forwarding': 'off'
+ 'hsr_tag_ins_offload': 'off [fixed]'
+ 'hsr_tag_rm_offload': 'off [fixed]'
+ 'hsr_fwd_offload': 'off [fixed]'
+ 'hsr_dup_offload': 'off [fixed]'}
+ 'timestamping': []
+ 'hw_timestamp_filters': []}
+ 'default_ipv4': {'gateway': '10.84.0.1'
+ 'interface': 'ens192'
+ 'address': '10.84.4.120'
+ 'broadcast': '10.84.127.255'
+ 'netmask': '255.255.128.0'
+ 'network': '10.84.0.0'
+ 'prefix': '17'
+ 'macaddress': '00:50:56:83:43:24'
+ 'mtu': 1500
+ 'type': 'ether'
+ 'alias': 'ens192'}
+ 'default_ipv6': {}
+ 'all_ipv4_addresses': ['10.84.4.120']
+ 'all_ipv6_addresses': ['fe80::250:56ff:fe83:4324']
+ 'locally_reachable_ips': {'ipv4': ['10.84.4.120'
+ '127.0.0.0/8'
+ '127.0.0.1']
+ 'ipv6': ['::1'
+ 'fe80::250:56ff:fe83:4324']}
+ 'service_mgr': 'systemd'
+ 'pkg_mgr': 'dnf'
+ 'gather_subset': ['all']
+ 'module_setup': True
+ 'discovered_interpreter_python': '/usr/bin/python3'
+ '_ansible_facts_gathered': True}"
+}
+
+TASK [Set virtual to false] ****************************************************
+skipping: [dashweb01fl.unicph.domain]
+
+TASK [Set virtual on ansible facts] ********************************************
+ok: [dashweb01fl.unicph.domain]
+
+TASK [set virtuak if ansible_fact virtualization_type is kvm] ******************
+skipping: [dashweb01fl.unicph.domain]
+
+TASK [Setfact for ansible processor type] **************************************
+ok: [dashweb01fl.unicph.domain]
+
+TASK [Debug] *******************************************************************
+ok: [dashweb01fl.unicph.domain] => {
+    "msg": "processor_type: Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz"
+}
+
+TASK [get devices when not virtual] ********************************************
+skipping: [dashweb01fl.unicph.domain]
+
+TASK [get virtual  servers when virtual] ***************************************
+ok: [dashweb01fl.unicph.domain -> localhost]
+
+TASK [Check if netbox have an invetory item of the processor_type  api/dcim/inventory-items] ***
+skipping: [dashweb01fl.unicph.domain]
+
+TASK [Setfact for ansible real cores] ******************************************
+ok: [dashweb01fl.unicph.domain]
+
+TASK [Setfact for ansible processor_count] *************************************
+ok: [dashweb01fl.unicph.domain]
+
+TASK [Setfact for ansible processors] ******************************************
+ok: [dashweb01fl.unicph.domain]
+
+TASK [Setfact for ansible real memory] *****************************************
+ok: [dashweb01fl.unicph.domain]
+
+TASK [Setfact for ansible vcpus] ***********************************************
+ok: [dashweb01fl.unicph.domain]
+
+TASK [Locate my ansible hostname in netbox_virtual_servers] ********************
+fatal: [dashweb01fl.unicph.domain]: FAILED! => {"msg": "The conditional check 'item.hostname == ansible_hostname' failed. The error was: error while evaluating conditional (item.hostname == ansible_hostname): 'dict object' has no attribute 'hostname'. 'dict object' has no attribute 'hostname'\n\nThe error appears to be in '/home/rks221/projects/invsync/tasks/main.yml': line 92
+ column 3
+ but may\nbe elsewhere in the file depending on the exact syntax problem.\n\nThe offending line appears to be:\n\n\n- name: \"Locate my ansible hostname in netbox_virtual_servers\"\n  ^ here\n"}
+
+PLAY RECAP *********************************************************************
+dashweb01fl.unicph.domain  : ok=12   changed=0    unreachable=0    failed=1    skipped=4    rescued=0    ignored=0   
+
+rks221@FAD1015320 ~/projects/invsync/tests (main)$ 

@@ -1,0 +1,39 @@
+####################################################
+# redhat only tasks
+####################################################
+- name: ansible_role_thinlinc | Redhat | Check if we're operating on a supported os
+  assert:
+    fail_msg: "{{ role_name }} only supports redhat 8"
+    success_msg: "{{ role_name }} supports {{ ansible_distribution }} version {{ ansible_distribution_version }}"
+    quiet: "{{ not ansible_check_mode }}"
+    that:
+      ansible_distribution|lower == "redhat" and ansible_distribution_major_version|int in [8]
+
+- name: ansible_role_thinlinc | Redhat | Enable codeready-builder repository
+  shell: subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms || echo
+  become: True
+
+- name: ansible_role_thinlinc | Redhat | Enable appstream repository
+  shell: subscription-manager repos --enable rhel-8-for-x86_64-appstream-rpms  || echo
+  become: True
+
+- name: ansible_role_thinlinc | Redhat | Install software
+  ansible.builtin.package:
+    name:
+      - wget
+      - expect
+      - gnome-desktop3
+      - gnome-terminal
+      - gnome-session
+      - gnome-menus
+      - gnome-keyring
+      - gnome-shell
+      - gnome-themes-standard
+      - gnome-session-xsession
+
+    state: present
+
+- name: Install the 'Gnome desktop' environment group
+  ansible.builtin.yum:
+    name: "@Xfce"
+    state: present

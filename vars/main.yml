@@ -1,0 +1,13 @@
+---
+netbox_headers:
+  Content-Type: "application/json"
+  Authorization: "Token {{ netbox_token }}"
+  Accept: "application/json"
+path: "api/{{ virtual | bool | ternary('virtualization/virtual-machines','dcim/devices') }}"
+invpath: "api/{{ virtual | bool | ternary('https://ipam.it.ku.dk/api/dcim/inventory-items','https://ipam.it.ku.dk/api/dcim/inventory-items') }}"
+physhwvendors: ["FUJITSU"]
+
+
+
+
+

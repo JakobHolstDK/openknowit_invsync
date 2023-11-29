@@ -1,0 +1,189 @@
+    - name: "IPAM data syncronization | Get Retrieve tags from NetBox API"
+      uri:
+        url: "{{ netbox_url }}/api/extras/tags/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_tags
+
+    - name: "IPAM data syncronization | init fact for existing tags "
+      set_fact:
+        existing_tags: []
+      when: existing_tags is not defined
+
+    - name: "IPAM data syncronization | set fact for existing tags "
+      set_fact:
+        existing_tags: "{{ netbox_tags.json.results | map(attribute='name') | list }}"
+      with_items: "{{ netbox_tags.json.results }}"
+      when: netbox_tags.json.results is defined
+
+    - name: "IPAM data syncronization | init fact for missing tags "
+      set_fact:
+        missing_tags: []
+      when: missing_tags is not defined
+
+    - name: "IPAM data syncronization | set fact for missing tags"
+      set_fact:
+        missing_tags: "{{ missing_tags | default([]) + [item] }}"
+      register: netbox_tags_missing_tags
+      when: item.name not in existing_tags
+      with_items: "{{ mytags }}"
+
+    - name: "Debug"
+      debug:
+        msg: "missing_tags: {{ missing_tags }}"
+      when: missing_tags is defined and missing_tags | length > 0
+
+
+    - name: "IPAM data syncronization | create tags if the are missing"
+      uri:
+        url: "{{ netbox_url }}/api/extras/tags/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: POST
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        body_format: json
+        body: |
+          {
+            "name": "{{ item.name }}",
+            "slug": "{{ item.slug }}",
+            "color": "{{ item.color }}",
+            "Description": "{{ item.description }}",
+          }
+        status_code: 201  # Expected HTTP status code for a successful response
+      with_items: "{{ missing_tags }}"
+      register: netbox_netboxtags_created
+      when : missing_tags is defined and missing_tags | length > 0
+
+    - name: "IPAM data syncronization | Get Retrieve tags from NetBox API"
+      uri:
+        url: "{{ netbox_url }}/api/extras/tags/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_tags
+
+    - name: "IPAM data syncronization | Save data to disk"
+      local_action:
+        module: copy
+        content: "{{ netbox_tags.json.results }}"
+        dest: "/tmp/netbox.tags.json"
+
+    - name: "IPAM data syncronization | Get Retrieve physical servers from NetBox API"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/devices/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_devices
+
+    - name: "IPAM data syncronization | Save data to disk"
+      local_action:
+        module: copy
+        content: "{{ netbox_devices.json.results }}"
+        dest: "/tmp/netbox.devices.json"
+
+    - name: "IPAM data syncronization  | Get invetory items"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/inventory-items/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token }} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_inventoryitems
+
+    - name: "IPAM data syncronization | Save the dato to disk"
+      local_action:
+        module: copy
+        content: "{{ netbox_inventoryitems.json.results }}"
+        dest: "/tmp/netbox.inventoryitems.json"
+
+    - name: "IPAM data syncronization | Get invetory items roles"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/inventory-item-roles/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token}} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_inventoryitemroles
+
+    - name: "IPAM data syncronization | Save the dato to disk"
+      local_action:
+        module: copy
+        content: "{{ netbox_inventoryitemroles.json.results }}"
+        dest: "/tmp/netbox.inventoryitemroles.json"
+
+    - name: "IPAN data syncronization| get manufacturers "
+      uri:
+        url: "{{ netbox_url }}/api/dcim/manufacturers/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token}} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_manufacturers
+
+    - name: "IPAM data syncronization| Save the dato to disk"
+      local_action:
+        module: copy
+        content: "{{ netbox_manufacturers.json.results }}"
+        dest: "/tmp/netbox.manufacturers.json"
+
+    - name: "IPAM data syncronization | Retrieve virtual servers from NetBox API"
+      uri:
+        url: "{{ netbox_url }}/api/virtualization/virtual-machines/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token}} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_virtualmachines
+
+    - name: "IPAM data syncronization | sef fact for virtual machines"
+      set_fact:
+        netbox_virtual_machines: "{{ netbox_virtualmachines.json.results | map(attribute='name') | list }}"
+      when: netbox_virtualmachines.json.results is defined
+
+
+    - name: "IPAM data syncronization | save vm data locally and temporayly"
+      local_action:
+        module: copy
+        content: "{{ netbox_virtualmachines.json.results }}"
+        dest: "/tmp/netbox.virtualmachines.json"
+
+    - name: "IPAM data syncronisation | Retrieve inventory-items for netbox API"
+      uri:
+        url: "{{ netbox_url }}/api/dcim/inventory-items/"  # Replace this with the appropriate NetBox API endpoint URL
+        method: GET
+        headers:
+          Authorization: "Token {{ netbox_token}} "  # Replace 'your-api-token' with your NetBox API token
+          Accept: "application/json"
+        status_code: 200  # Expected HTTP status code for a successful response
+      register: netbox_inventoryitems
+
+    - name: "IPAM data syncronization | save the data locally and temporayly"
+      local_action:
+        module: copy
+        content: "{{ netbox_inventoryitems.json.results }}"
+        dest: "/tmp/netbox.inventoryitems.json"
+
+
+
+    - name: "IPAM data syncronization  | Find orphaned inventory item roles"
+      set_fact:
+        orphaned_inventoryitemroles: "{{ netbox_inventoryitemroles.json.results | rejectattr('name', 'in', inventoryitemroles) | list }}"
+      when: netbox_inventoryitemroles.json.results is defined
+
+
+        ###################################################################################
+        # End of  ipan collect
+        ###################################################################################
+
